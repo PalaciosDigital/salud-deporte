@@ -1,0 +1,11 @@
+# Nunca subir datos sin cifrar ni sesiones
+datos/
+tablero.html
+*.log
+__pycache__/
+.DS_Store
+garmin_tokens.json
+datos_key
+publicado/
+salida/
+com.diego.salud-deporte.plist

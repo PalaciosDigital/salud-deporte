@@ -1,0 +1,61 @@
+name: Actualizar tablero
+
+on:
+  schedule:
+    # Cada hora de 6:15 a 22:15 (hora de Ecuador, UTC-5)
+    - cron: "15 0-3,11-23 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: tablero
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    env:
+      TZ: America/Guayaquil
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Traer datos cifrados
+        uses: actions/checkout@v4
+        with:
+          ref: publicado
+          path: publicado
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Bajar de Garmin y generar tablero cifrado
+        env:
+          DATOS_KEY: ${{ secrets.DATOS_KEY }}
+          TABLERO_CLAVE: ${{ secrets.TABLERO_CLAVE }}
+        run: python nube.py actualizar publicado/datos.enc salida
+
+      - name: Guardar datos cifrados (rama publicado, sin historial)
+        run: |
+          cd salida
+          git init -q -b publicado
+          git add -A
+          git -c user.name="tablero-bot" -c user.email="actions@users.noreply.github.com" commit -qm "Actualización $(date '+%Y-%m-%d %H:%M')"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" publicado
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: salida/web
+      - id: despliegue
+        uses: actions/deploy-pages@v4

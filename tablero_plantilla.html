@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salud y deporte</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --plano:#f9f9f7; --superficie:#fcfcfb; --borde:rgba(11,11,11,.10);
+  --tinta:#0b0b0b; --tinta2:#52514e; --tenue:#898781;
+  --grilla:#e1e0d9; --eje:#c3c2b7; --lavado:#f0efec;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --q200:#9ec5f4; --q300:#6da7ec; --q400:#3987e5; --q550:#1c5cab; --q700:#0d366b;
+  --bien:#0ca30c; --aviso:#fab219; --serio:#ec835a; --critico:#d03b3b; --neutro:#c3c2b7;
+  --bien-txt:#006300;
+}
+@media (prefers-color-scheme:dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme:dark;
+    --plano:#0d0d0d; --superficie:#1a1a19; --borde:rgba(255,255,255,.10);
+    --tinta:#f0efec; --tinta2:#c3c2b7; --tenue:#898781;
+    --grilla:#2c2c2a; --eje:#383835; --lavado:#262624;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+    --q200:#184f95; --q300:#256abf; --q400:#3987e5; --q550:#6da7ec; --q700:#b7d3f6;
+    --neutro:#52514e; --bien-txt:#0ca30c;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --plano:#0d0d0d; --superficie:#1a1a19; --borde:rgba(255,255,255,.10);
+  --tinta:#f0efec; --tinta2:#c3c2b7; --tenue:#898781;
+  --grilla:#2c2c2a; --eje:#383835; --lavado:#262624;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+  --q200:#184f95; --q300:#256abf; --q400:#3987e5; --q550:#6da7ec; --q700:#b7d3f6;
+  --neutro:#52514e; --bien-txt:#0ca30c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--plano);color:var(--tinta);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+.envoltura{max-width:1180px;margin:0 auto;padding:24px 16px 64px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:20px}
+h1{font-size:26px;line-height:1.15;margin:0;font-weight:650;letter-spacing:-.01em}
+h2{font-size:18px;margin:0 0 4px;font-weight:650}
+.sub{color:var(--tinta2);font-size:13px;margin-top:4px}
+.seg{display:inline-flex;background:var(--superficie);border:1px solid var(--borde);border-radius:10px;padding:3px}
+.seg button{border:0;background:none;color:var(--tinta2);font:inherit;font-size:13px;padding:6px 11px;border-radius:7px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--tinta);color:var(--superficie);font-weight:600}
+button:focus-visible{outline:2px solid var(--s1);outline-offset:2px}
+
+/* botón de ayuda y su globo */
+.info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid var(--eje);background:var(--superficie);color:var(--tinta2);font:600 11px/1 system-ui,sans-serif;cursor:help;padding:0;margin-left:6px;vertical-align:1px;flex:none}
+.info:hover,.info[aria-expanded="true"]{background:var(--tinta);color:var(--superficie);border-color:var(--tinta)}
+#globo{position:fixed;z-index:50;max-width:320px;background:var(--tinta);color:var(--superficie);border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.45;box-shadow:0 8px 28px rgba(0,0,0,.22)}
+#globo b{display:block;font-size:14px;margin-bottom:4px}
+#globo p{margin:6px 0 0}
+#globo .clave{opacity:.75;font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin-top:10px;display:block}
+
+/* fichas de hoy */
+.fichas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.ficha{background:var(--superficie);border:1px solid var(--borde);border-radius:14px;padding:16px 16px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.ficha .et{font-size:13px;color:var(--tinta2);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px}
+.ficha .et span:first-child{display:inline-flex;align-items:center}
+.ficha .val{font-size:34px;font-weight:650;line-height:1.05;letter-spacing:-.02em}
+.ficha .val small{font-size:15px;font-weight:500;color:var(--tinta2);margin-left:3px;letter-spacing:0}
+.ficha .nota{font-size:13px;color:var(--tinta2)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--tinta);white-space:nowrap}
+.chip i{width:9px;height:9px;border-radius:50%;flex:none}
+.resumen-linea{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--tinta2);margin:0 0 22px}
+.resumen-linea b{color:var(--tinta);font-weight:600}
+
+/* valoración */
+.valoracion{background:var(--superficie);border:1px solid var(--borde);border-radius:16px;padding:20px;margin-bottom:26px}
+.veredicto{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px}
+.veredicto .sello{flex:none;width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff}
+.veredicto .titular{font-size:19px;font-weight:650;line-height:1.3}
+.veredicto .bajada{font-size:13px;color:var(--tinta2);margin-top:3px}
+.areas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.area{border:1px solid var(--borde);border-radius:12px;padding:14px 14px 12px;display:flex;flex-direction:column;gap:8px;border-top-width:4px}
+.area h4{margin:0;font-size:15px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.area ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px}
+.area li{font-size:13.5px;color:var(--tinta2);padding-left:20px;position:relative}
+.area li::before{content:attr(data-i);position:absolute;left:0;top:0;font-weight:700;width:14px;text-align:center}
+.area li[data-t="bien"]::before{color:var(--bien-txt)}
+.area li[data-t="aviso"]::before{color:var(--tinta)}
+.area li[data-t="serio"]::before{color:var(--critico)}
+.area li b{color:var(--tinta);font-weight:600}
+.area .hacer{margin-top:auto;font-size:13.5px;background:var(--lavado);border-radius:8px;padding:9px 11px}
+.area .hacer b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--tinta2);margin-bottom:2px}
+
+.pestanas{display:flex;gap:4px;border-bottom:1px solid var(--grilla);margin-bottom:8px;overflow-x:auto}
+.pestanas button{border:0;background:none;font:inherit;font-size:15px;color:var(--tinta2);padding:10px 14px;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;white-space:nowrap}
+.pestanas button[aria-selected="true"]{color:var(--tinta);border-bottom-color:var(--tinta);font-weight:600}
+.barra{position:sticky;top:0;z-index:10;background:var(--plano);padding-top:6px;margin-bottom:12px;border-bottom:1px solid var(--grilla)}
+.barra .pestanas{border-bottom:0;margin-bottom:0}
+.periodo{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:10px 0 12px;font-size:13px;color:var(--tinta2)}
+.seg{max-width:100%;overflow-x:auto}
+.intro-pestana{font-size:13px;color:var(--tinta2);margin:0 0 14px}
+
+.rejilla{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.tarjeta{background:var(--superficie);border:1px solid var(--borde);border-radius:14px;padding:16px 16px 10px;min-width:0}
+.tarjeta.ancha{grid-column:1/-1}
+.tarjeta h3{margin:0;font-size:15px;font-weight:600;display:flex;align-items:center}
+.tarjeta .exp{margin:3px 0 10px;font-size:13px;color:var(--tinta2)}
+.tarjeta .lectura{font-size:13px;color:var(--tinta);background:var(--lavado);border-radius:8px;padding:7px 10px;margin:0 0 10px}
+.leyenda{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--tinta2);margin:0 0 8px}
+.leyenda span{display:inline-flex;align-items:center;gap:6px}
+.leyenda i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.leyenda i.linea{height:2px;width:14px;border-radius:2px}
+.lienzo{position:relative;height:250px}
+details{margin-top:6px;font-size:12.5px;color:var(--tinta2)}
+details summary{cursor:pointer;padding:4px 0}
+.tabla-scroll{overflow-x:auto;max-height:280px;overflow-y:auto}
+table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--grilla);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--tinta2);font-weight:600;position:sticky;top:0;background:var(--superficie)}
+.vacio{color:var(--tenue);font-size:13px;padding:30px 0;text-align:center}
+.predicciones{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:4px}
+.predicciones>div{border:1px solid var(--borde);border-radius:10px;padding:10px 12px}
+.predicciones .d{font-size:12.5px;color:var(--tinta2)}
+.predicciones .t{font-size:20px;font-weight:650}
+.balance{display:flex;flex-direction:column;gap:16px;padding:6px 0 10px}
+.balance .top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 8px;font-size:13px;margin-bottom:6px}
+.balance .pista{position:relative;height:12px;background:var(--lavado);border-radius:6px}
+.balance .rango{position:absolute;top:0;bottom:0;background:var(--q200);opacity:.6;border-radius:6px}
+.balance .marca{position:absolute;top:-4px;width:4px;height:20px;border-radius:2px;background:var(--tinta);transform:translateX(-2px)}
+.pista-ayuda{font-size:12px;color:var(--tenue);margin:0 0 6px}
+#candado{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+#candado form{width:100%;max-width:360px;background:var(--superficie);border:1px solid var(--borde);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:12px}
+#candado input[type=password]{font:inherit;padding:11px 12px;border:1px solid var(--eje);border-radius:10px;background:var(--plano);color:var(--tinta)}
+#candado label{font-size:13px;color:var(--tinta2);display:flex;gap:8px;align-items:center}
+#candado button{font:inherit;font-weight:600;padding:11px;border:0;border-radius:10px;background:var(--tinta);color:var(--superficie);cursor:pointer}
+#candado .error{margin:0;color:var(--critico);font-size:13px;min-height:1em}
+footer{margin-top:28px;font-size:12px;color:var(--tenue)}
+[hidden]{display:none!important}
+
+@media (max-width:900px){.fichas{grid-template-columns:repeat(2,minmax(0,1fr))}.areas{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:767px){
+  .rejilla{grid-template-columns:minmax(0,1fr)}
+  .predicciones{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ficha .val{font-size:28px}
+  .lienzo{height:220px}
+  h1{font-size:22px}
+  .veredicto .titular{font-size:17px}
+}
+</style>
+</head>
+<body>
+<div id="candado" hidden>
+  <form autocomplete="on">
+    <h1>Salud y deporte</h1>
+    <p class="sub">Tus datos están cifrados. Escribe tu contraseña para verlos; se descifran solo en este navegador.</p>
+    <input type="text" name="username" value="salud-deporte" autocomplete="username" hidden>
+    <input type="password" autocomplete="current-password" placeholder="Contraseña" aria-label="Contraseña" required>
+    <label><input type="checkbox" id="recordar"> Recordar en este dispositivo</label>
+    <button type="submit">Abrir</button>
+    <p class="error" role="alert"></p>
+  </form>
+</div>
+<div class="envoltura" hidden>
+  <header>
+    <div>
+      <h1>Salud y deporte</h1>
+      <div class="sub" id="sello"></div>
+    </div>
+  </header>
+
+  <section class="fichas" id="fichas" aria-label="Cómo estás hoy"></section>
+  <div class="resumen-linea" id="resumenLinea"></div>
+
+  <section class="valoracion" id="valoracion" aria-label="Valoración"></section>
+
+  <div class="barra" id="barra">
+    <nav class="pestanas" role="tablist">
+      <button role="tab" data-t="rend">Rendimiento</button>
+      <button role="tab" data-t="desc">Descanso</button>
+      <button role="tab" data-t="perf">Performance</button>
+    </nav>
+    <div class="periodo">
+      <span>Periodo de los gráficos</span>
+      <div class="seg" id="rango" role="group" aria-label="Periodo de los gráficos">
+        <button data-d="30">30 días</button><button data-d="90">90 días</button><button data-d="180">6 meses</button><button data-d="365">1 año</button><button data-d="100000">Todo</button>
+      </div>
+    </div>
+  </div>
+  <p class="intro-pestana" id="introPestana"></p>
+  <p class="pista-ayuda">Pasa el cursor (o toca) cualquier gráfico para ver el detalle de cada día. Los botones <span class="info" style="cursor:default">?</span> explican qué significa cada dato.</p>
+
+  <section id="p-rend" class="rejilla"></section>
+  <section id="p-desc" class="rejilla" hidden></section>
+  <section id="p-perf" class="rejilla" hidden></section>
+
+  <footer>Datos de Garmin Connect (Forerunner 965). Se actualiza solo a las 7:15, 13:00 y 21:30; recarga la página para ver lo último. Las valoraciones son orientativas, no un consejo médico. <a href="#" id="olvidar" style="color:inherit">Olvidar contraseña en este dispositivo</a></footer>
+</div>
+<div id="globo" role="tooltip" hidden></div>
+
+<script>
+function iniciar(D){
+document.querySelector('.envoltura').hidden=false;
+
+/* ---------- utilidades ---------- */
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const MESES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const fCorta = s => {const [y,m,d]=s.split('-');return `${+d} ${MESES[m-1]}`;};
+const fLarga = s => {const [y,m,d]=s.split('-');return `${+d} ${MESES[m-1]} ${y}`;};
+const ritmo = x => {if(x==null)return '—';let m=Math.floor(x),s=Math.round((x-m)*60);if(s===60){m++;s=0;}return `${m}:${String(s).padStart(2,'0')}`;};
+const hm = h => {if(h==null||isNaN(h))return '—';const m=Math.round(h*60);return `${Math.floor(m/60)} h ${String(m%60).padStart(2,'0')}`;};
+const segs = s => {if(!s)return '—';s=Math.round(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0');};
+const n0 = x => x==null||isNaN(x)?'—':Math.round(x).toLocaleString('es');
+const n1 = x => x==null||isNaN(x)?'—':(Math.round(x*10)/10).toLocaleString('es');
+const n2 = x => x==null||isNaN(x)?"—":(Math.round(x*100)/100).toLocaleString("es",{minimumFractionDigits:2});
+const iso = d => d.toISOString().slice(0,10);
+const sumarDias = (s,n) => {const d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return iso(d);};
+const lunes = s => {const d=new Date(s+'T12:00:00');d.setDate(d.getDate()-(d.getDay()+6)%7);return iso(d);};
+const entre = (a,b) => Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/864e5);
+const prom = (arr,k) => {const v=arr.map(x=>typeof k==='function'?k(x):x[k]).filter(x=>x!=null&&!isNaN(x));return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;};
+const suma = (arr,k) => arr.reduce((s,x)=>s+(x[k]||0),0);
+const guardar=(k,v)=>{try{localStorage.setItem('sd_'+k,v)}catch(e){}};
+const leer=(k,def)=>{try{return localStorage.getItem('sd_'+k)??def}catch(e){return def}};
+const signo = (x,dec=0,u='') => x==null||isNaN(x)?'—':(x>0?'+':x<0?'−':'±')+Math.abs(dec?Math.round(x*10**dec)/10**dec:Math.round(x)).toLocaleString('es')+u;
+
+/* ---------- glosario: qué significa cada dato ---------- */
+const GLOS={
+  prep:['Preparación para entrenar','Una nota de 0 a 100 que el reloj calcula cada mañana. Junta cómo dormiste, tu VFC, cuánta recuperación te queda del último entrenamiento, tu carga reciente y tu estrés.','75–100: listo para entrenar fuerte · 50–74: entrena normal · 25–49: mejor suave · menos de 25: descansa.'],
+  sueno:['Puntaje de sueño','Nota de 0 a 100 de la noche: cuánto dormiste, cuánto sueño profundo y REM tuviste, cuántas veces te despertaste y qué tan relajado estuvo tu cuerpo.','80 o más: bueno · 60–79: regular · menos de 60: malo.'],
+  fases:['Fases del sueño','Profundo: el cuerpo se repara (músculos, defensas). REM: el cerebro procesa y consolida memoria. Ligero: transición, ocupa la mayor parte de la noche. Despierto: interrupciones.','Lo saludable: profundo 16–33 % de la noche y REM 21–31 %. Garmin calcula que necesitas unas 8 h.'],
+  hrv:['VFC (variabilidad de la frecuencia cardiaca)','Cuánto varía el tiempo entre un latido y otro mientras duermes, en milisegundos. Una VFC más alta indica que tu sistema nervioso está relajado y recuperado.','No te compares con otras personas: compárate con TU rango normal (franja verde). Si la media de 7 días cae debajo varios días, suele ser cansancio, estrés, alcohol o que te estás enfermando.'],
+  fc_reposo:['Frecuencia cardiaca en reposo','Tus latidos por minuto cuando estás totalmente quieto, medidos sobre todo de noche. Con mejor forma física suele bajar.','Si sube 5 ppm o más sobre lo normal durante varios días, suele indicar fatiga, poco sueño o una enfermedad que empieza.'],
+  bb:['Body Battery','Una estimación de tu energía de 0 a 100. Se recarga durmiendo y descansando; se gasta con el ejercicio, el estrés y la actividad del día.','Lo ideal es despertar sobre 75. Si no pasas de 50 al despertar varios días seguidos, no te estás recuperando bien.'],
+  estres:['Estrés','Nivel de 0 a 100 que el reloj deduce de tu VFC durante el día. Mide estrés físico y mental (también sube si estás enfermo o hiciste ejercicio hace poco).','0–25: descanso · 26–50: bajo · 51–75: medio · 76–100: alto.'],
+  carga:['Carga de la semana (carga aguda)','La suma del esfuerzo de todos tus entrenamientos de los últimos 7 días. Cada actividad suma más cuanto más larga e intensa es.','El rango óptimo sale de tus últimas 4 semanas. Por debajo: pierdes forma. Dentro: mejoras. Por encima: riesgo de lesión o sobreentrenamiento.'],
+  estado:['Estado de entrenamiento','El resumen que hace Garmin cruzando tu carga, tu VO2máx y tu VFC.','Productivo: estás mejorando · Mantenimiento: conservas tu forma · Recuperación: carga baja para recuperarte · En pico: en tu mejor momento · Improductivo: entrenas pero no mejoras (falta descanso) · Desentrenamiento: llevas días con poca carga · Sobrecarga/Exigido: demasiada carga.'],
+  vo2:['VO2máx','Cuánto oxígeno puede usar tu cuerpo por minuto y por kilo de peso. Es el tamaño de tu "motor" aeróbico. El reloj lo estima en carreras al aire libre con GPS y pulso.','Sube cuando mejoras tu forma. Un cambio de 1 punto ya es significativo. El calor y la altura (Quito) pueden bajarlo un poco.'],
+  km:['Kilómetros por semana','Distancia total corrida cada semana (carrera, trail y cinta), de lunes a domingo.','Para progresar sin lesionarte, no subas más de un 10 % por semana.'],
+  tiempo:['Tiempo de entrenamiento','Minutos en movimiento cada semana, separados por tipo de actividad.','Útil para ver si eres constante y si combinas carrera con fuerza (recomendable 1–2 sesiones de fuerza por semana).'],
+  ritmo_fc:['Ritmo frente a pulso','Cada punto es una carrera: a qué ritmo fuiste y con qué pulso medio.','Si con el tiempo los puntos se mueven hacia abajo y a la derecha, corres más rápido con menos pulso: tu forma aeróbica mejora. Las carreras con cuestas o calor salen con más pulso.'],
+  zonas:['Zonas de frecuencia cardiaca','Tu pulso se divide en 5 zonas según tu FC máxima. Z1: muy suave · Z2: fácil, puedes conversar (la que construye base) · Z3: aeróbica, cómoda pero exigente · Z4: umbral, difícil sostener · Z5: máximo esfuerzo.','Para carreras de fondo, lo habitual es que cerca del 80 % del tiempo esté en Z1–Z2.'],
+  pred:['Predicciones de carrera','Lo que Garmin estima que podrías correr hoy en cada distancia, si salieras a correrla al máximo y bien preparado.','Se basan en tu VO2máx y tu historial. Para media maratón y maratón asumen que has hecho tiradas largas.'],
+  balance:['Balance de carga','Cómo se reparte tu esfuerzo de las últimas 4 semanas. Aeróbica baja: rodajes suaves (Z1–Z2). Aeróbica alta: tempo y umbral (Z3–Z4). Anaeróbica: series cortas e intensas.','La barra clara es tu objetivo y la marca oscura, dónde estás. Lo ideal es que las tres marcas caigan dentro de su objetivo.'],
+  sueno_prep:['Sueño frente a preparación','Cada punto es un día: el puntaje de sueño de esa noche y la preparación con la que amaneciste.','Si los puntos suben hacia la derecha, dormir bien es lo que más te recupera.'],
+  efic:['Eficiencia aeróbica','Metros que avanzas por cada latido del corazón cuando corres (velocidad ÷ pulso medio).','Si sube, tu corazón trabaja menos para ir igual de rápido: estás más en forma.']
+};
+const ayuda = k => GLOS[k]?`<button class="info" type="button" data-k="${k}" aria-label="Qué significa ${GLOS[k][0]}" aria-expanded="false">?</button>`:'';
+const globo=document.getElementById('globo');let fijo=null;
+function mostrar(btn){const [t,que,leer]=GLOS[btn.dataset.k];globo.innerHTML=`<b>${t}</b>${que}<span class="clave">Cómo leerlo</span>${leer}`;globo.hidden=false;
+  const r=btn.getBoundingClientRect(),w=globo.offsetWidth,h=globo.offsetHeight;
+  let x=Math.min(Math.max(8,r.left+r.width/2-w/2),innerWidth-w-8), y=r.bottom+8; if(y+h>innerHeight-8)y=Math.max(8,r.top-h-8);
+  globo.style.left=x+'px';globo.style.top=y+'px';document.querySelectorAll('.info[aria-expanded="true"]').forEach(b=>b.setAttribute('aria-expanded','false'));btn.setAttribute('aria-expanded','true');}
+function ocultar(){globo.hidden=true;fijo=null;document.querySelectorAll('.info[aria-expanded="true"]').forEach(b=>b.setAttribute('aria-expanded','false'));}
+document.addEventListener('mouseover',e=>{const b=e.target.closest('.info[data-k]');if(b&&!fijo&&matchMedia('(hover:hover)').matches)mostrar(b);});
+document.addEventListener('mouseout',e=>{const b=e.target.closest('.info[data-k]');if(b&&!fijo)ocultar();});
+document.addEventListener('click',e=>{const b=e.target.closest('.info[data-k]');if(b){if(fijo===b){ocultar();}else{mostrar(b);fijo=b;}e.stopPropagation();return;}if(!globo.contains(e.target))ocultar();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')ocultar();});
+addEventListener('scroll',()=>{if(!globo.hidden)ocultar();},{passive:true});
+
+/* ---------- diccionarios ---------- */
+const ST={bien:{c:'--bien',ico:'✓'},aviso:{c:'--aviso',ico:'!'},serio:{c:'--serio',ico:'▲'},critico:{c:'--critico',ico:'✕'},neutro:{c:'--neutro',ico:'·'}};
+const PREP={PRIME:['Óptima','bien'],HIGH:['Alta','bien'],MODERATE:['Moderada','aviso'],LOW:['Baja','serio'],POOR:['Muy baja','critico']};
+const prepPorNota = v => v==null?null:v>=75?'HIGH':v>=50?'MODERATE':v>=25?'LOW':'POOR';
+const PREP_TXT={bien:'Listo para un entrenamiento exigente.',aviso:'Puedes entrenar, sin forzar.',serio:'Mejor un día suave.',critico:'Prioriza descansar hoy.'};
+const HRV={BALANCED:['Equilibrada','bien'],UNBALANCED:['Desequilibrada','aviso'],LOW:['Baja','serio'],POOR:['Muy baja','critico']};
+const ACWR={OPTIMAL:['En rango','bien'],LOW:['Por debajo','aviso'],HIGH:['Alta','serio'],VERY_HIGH:['Muy alta','critico']};
+const ESTADO={PRODUCTIVE:'Productivo',MAINTAINING:'Mantenimiento',RECOVERY:'Recuperación',PEAKING:'En pico',UNPRODUCTIVE:'Improductivo',DETRAINING:'Desentrenamiento',OVERREACHING:'Sobrecarga',STRAINED:'Exigido',NO_STATUS:'Sin estado'};
+const ESTADO_TXT={PRODUCTIVE:'tu forma está mejorando',MAINTAINING:'conservas tu forma',RECOVERY:'carga baja, te estás recuperando',PEAKING:'estás en tu mejor momento',UNPRODUCTIVE:'entrenas pero tu forma no sube; suele faltar descanso',DETRAINING:'llevas varios días con poca carga y empiezas a perder forma',OVERREACHING:'demasiada carga para lo que recuperas',STRAINED:'tu cuerpo está muy exigido'};
+const TIPO={running:'Carrera',trail_running:'Trail',treadmill_running:'Cinta',track_running:'Pista',walking:'Caminata',hiking:'Senderismo',strength_training:'Fuerza',lap_swimming:'Natación',open_water_swimming:'Aguas abiertas',indoor_cycling:'Ciclismo indoor',cycling:'Ciclismo',road_biking:'Ciclismo',meditation:'Meditación',yoga:'Yoga',other:'Otro'};
+const EFECTO={AEROBIC_BASE:'Base aeróbica',TEMPO:'Tempo',LACTATE_THRESHOLD:'Umbral',VO2MAX:'VO2máx',ANAEROBIC_CAPACITY:'Anaeróbico',SPEED:'Velocidad',RECOVERY:'Recuperación'};
+const esCarrera = t => /running/.test(t);
+const grupo = t => esCarrera(t)?'Carrera':t==='strength_training'?'Fuerza':t==='walking'||t==='hiking'?'Caminata':'Otros';
+const estSueno = v => v==null?null:v>=80?['Bueno','bien']:v>=60?['Regular','aviso']:['Malo','serio'];
+const chip = (txt,st) => `<span class="chip"><i style="background:var(${ST[st].c})"></i>${txt}</span>`;
+const PEOR = a => ['critico','serio','aviso','bien'].find(s=>a.includes(s))||'bien';
+
+/* ---------- estado ---------- */
+let rango = +leer('rango',90), pestana = leer('tab','rend');
+const graficos = [];
+const DIAS = D.dias, ACTS = D.actividades;
+const ultimo = DIAS.length?DIAS[DIAS.length-1].f:iso(new Date());
+const desde = () => sumarDias(ultimo,-rango+1);
+const diasR = () => DIAS.filter(d=>d.f>=desde());
+const actsR = () => ACTS.filter(a=>a.f>=desde());
+const ult = k => {for(let i=DIAS.length-1;i>=0;i--){if(DIAS[i][k]!=null)return DIAS[i];}return null;};
+const ventana = (n,off=0) => {const fin=sumarDias(ultimo,-off), ini=sumarDias(fin,-n+1);return DIAS.filter(d=>d.f>=ini&&d.f<=fin);};
+const actsVentana = (n,off=0) => {const fin=sumarDias(ultimo,-off), ini=sumarDias(fin,-n+1);return ACTS.filter(a=>a.f>=ini&&a.f<=fin);};
+const eficiencia = a => a.ritmo&&a.fc?(1000/a.ritmo)/a.fc:null; // metros por latido
+
+/* Con periodos largos, los gráficos diarios pasan a promedios semanales */
+const SEMANAL = () => rango>120;
+function agrupar(R){
+  if(!SEMANAL())return R;
+  const m=new Map();
+  R.forEach(d=>{const k=lunes(d.f);if(!m.has(k))m.set(k,[]);m.get(k).push(d);});
+  return [...m.entries()].map(([f,arr])=>{const o={f,semanal:true,n:arr.length};
+    Object.keys(arr[arr.length-1]).forEach(k=>{if(k==='f')return;const nums=arr.map(x=>x[k]).filter(v=>typeof v==='number');
+      if(nums.length)o[k]=Math.round(nums.reduce((a,b)=>a+b,0)/nums.length*100)/100; else o[k]=arr[arr.length-1][k];});
+    o.prep_nivel=prepPorNota(o.prep); return o;});
+}
+const etiquetaDia = d => d.semanal?`Semana del ${fCorta(d.f)}`:fLarga(d.f);
+
+/* ---------- cabecera y fichas ---------- */
+const g = new Date(D.generado);
+document.getElementById('sello').textContent = `Actualizado el ${g.getDate()} ${MESES[g.getMonth()]} a las ${String(g.getHours()).padStart(2,'0')}:${String(g.getMinutes()).padStart(2,'0')} · ${ACTS.length} actividades desde ${DIAS.length?fLarga(DIAS[0].f):'—'}`;
+
+function fichas(){
+  const p=ult('prep'), s=ult('sueno'), h=ult('hrv'), c=ult('carga_aguda');
+  const out=[];
+  const et=(t,k,ch)=>`<div class="et"><span>${t}${ayuda(k)}</span>${ch}</div>`;
+  if(p){const [t,st]=PREP[p.prep_nivel]||['—','neutro'];
+    out.push(`<div class="ficha">${et('Preparación hoy','prep',chip(t,st))}<div class="val">${p.prep}<small>/100</small></div><div class="nota">${PREP_TXT[st]||''}${p.recuperacion_h?` Te faltan ${p.recuperacion_h} h de recuperación.`:''}</div></div>`);}
+  if(s){const [t,st]=estSueno(s.sueno);
+    out.push(`<div class="ficha">${et('Sueño anoche','sueno',chip(t,st))}<div class="val">${s.sueno}<small>/100</small></div><div class="nota">Dormiste ${hm(s.sueno_h)}, de ellas ${hm(s.profundo)} de sueño profundo.</div></div>`);}
+  if(h){const [t,st]=HRV[h.hrv_estado]||['—','neutro'];
+    out.push(`<div class="ficha">${et('VFC anoche','hrv',chip(t,st))}<div class="val">${h.hrv}<small>ms</small></div><div class="nota">Media de 7 días: ${h.hrv_sem??'—'} ms. Tu rango normal: ${h.hrv_lo??'?'}–${h.hrv_hi??'?'} ms.</div></div>`);}
+  if(c){const [t,st]=ACWR[c.acwr_estado]||['—','neutro'];
+    out.push(`<div class="ficha">${et('Carga de la semana','carga',chip(t,st))}<div class="val">${n0(c.carga_aguda)}</div><div class="nota">Lo óptimo para ti: ${n0(c.carga_min)}–${n0(c.carga_max)}.${c.estado?` Estado: ${ESTADO[c.estado]||c.estado}.`:''}</div></div>`);}
+  document.getElementById('fichas').innerHTML=out.join('');
+
+  const v=ult('vo2'), r=ult('fc_reposo'), b=ult('bb_max'), ua=ACTS[0];
+  const piezas=[];
+  if(v)piezas.push(`VO2máx <b>${v.vo2}</b>${ayuda('vo2')}`);
+  if(r)piezas.push(`FC en reposo <b>${r.fc_reposo} ppm</b>${ayuda('fc_reposo')}`);
+  if(b)piezas.push(`Body Battery hoy <b>${b.bb_min}–${b.bb_max}</b>${ayuda('bb')}`);
+  if(ua)piezas.push(`Último entrenamiento: <b>${TIPO[ua.tipo]||ua.tipo}${ua.km?` de ${ua.km.toFixed(1)} km`:''}</b>, ${fCorta(ua.f)} (hace ${entre(ua.f,ultimo)} días)`);
+  document.getElementById('resumenLinea').innerHTML=piezas.map(x=>`<span>${x}</span>`).join('');
+}
+
+/* ---------- valoración cualitativa (últimas 4 semanas frente a las 4 anteriores) ---------- */
+function valorar(){
+  const U=ventana(28), P=ventana(28,28), U7=ventana(7), base=ventana(28,7);
+  const AU=actsVentana(28), AP=actsVentana(28,28);
+  const runsU=AU.filter(a=>esCarrera(a.tipo)), runsP=AP.filter(a=>esCarrera(a.tipo));
+  const items={desc:[],rend:[],perf:[]}, pts={desc:0,rend:0,perf:0}, hacer={};
+  const add=(a,t,txt)=>items[a].push([t,txt]);
+
+  /* Descanso */
+  const sH=prom(U,'sueno_h'), sHp=prom(P,'sueno_h'), sS=prom(U,'sueno');
+  const noches=U.filter(d=>d.sueno_h), n7=noches.length?Math.round(noches.filter(d=>d.sueno_h>=7).length/noches.length*100):null;
+  if(sH!=null){const t=sH>=7.5?'bien':sH>=6.75?'aviso':'serio';pts.desc+=t==='bien'?0:t==='aviso'?1:2;
+    add('desc',t,`Duermes <b>${hm(sH)}</b> de media${sHp?` (${signo((sH-sHp)*60,0,' min')} frente al mes anterior)`:''}; el ${n7} % de las noches pasas de 7 h.`);}
+  if(sS!=null){const t=sS>=80?'bien':sS>=65?'aviso':'serio';pts.desc+=t==='bien'?0:t==='aviso'?1:2;
+    add('desc',t,`Puntaje de sueño medio: <b>${n0(sS)}/100</b> (${sS>=80?'bueno':sS>=65?'regular':'bajo'}).`);}
+  const hv=U.filter(d=>d.hrv_estado), bal=hv.length?Math.round(hv.filter(d=>d.hrv_estado==='BALANCED').length/hv.length*100):null;
+  if(bal!=null){const t=bal>=75?'bien':bal>=50?'aviso':'serio';pts.desc+=t==='bien'?0:t==='aviso'?1:2;
+    add('desc',t,`Tu VFC estuvo en su rango normal el <b>${bal} %</b> de los días.`);}
+  const rhr7=prom(U7,'fc_reposo'), rhrB=prom(base,'fc_reposo'), dR=rhr7!=null&&rhrB!=null?rhr7-rhrB:null;
+  if(dR!=null){const t=dR<=1.5?'bien':dR<4?'aviso':'serio';pts.desc+=t==='bien'?0:t==='aviso'?1:2;
+    add('desc',t,`Pulso en reposo esta semana: <b>${n0(rhr7)} ppm</b> (${signo(dR,0,' ppm')} frente a tu normal${dR<=1.5?', estable':dR<4?', algo alto':', alto'}).`);}
+  const bbW=prom(U7,'bb_max');
+  if(bbW!=null){const t=bbW>=75?'bien':bbW>=55?'aviso':'serio';pts.desc+=t==='bien'?0:1;
+    add('desc',t,`Esta semana despiertas con una Body Battery de <b>${n0(bbW)}</b> de media${bbW>=75?' (buena recarga)':bbW>=55?' (recarga a medias)':' (recargas poco)'}.`);}
+  hacer.desc = dR!=null&&dR>=4?'Tu pulso en reposo está alto. Si además te notas cansado, haz 1–2 días suaves y vigila si te estás enfermando.'
+    : sH!=null&&sH<7?'Intenta acostarte 30 minutos antes: dormir más es lo que más mueve tu recuperación.'
+    : bal!=null&&bal<60?'Tu VFC sale de rango a menudo: revisa estrés, alcohol y cenas tardías, y alterna días duros con suaves.'
+    : 'Tus hábitos de descanso están funcionando: mantén horarios regulares de sueño.';
+
+  /* Rendimiento */
+  const km=suma(runsU,'km'), kmP=suma(runsP,'km');
+  const cambio=kmP?Math.round((km-kmP)/kmP*100):null;
+  const tRend=kmP?(km>=kmP*0.85?'bien':km>=kmP*0.6?'aviso':'serio'):'bien';pts.rend+=tRend==='bien'?0:tRend==='aviso'?1:2;
+  add('rend',tRend,`<b>${n0(km)} km</b> corridos en 4 semanas, en ${runsU.length} carreras${cambio!=null?` (${signo(cambio,0,' %')} frente a las 4 anteriores)`:''}.`);
+  const semanasConstantes=[0,7,14,21].filter(o=>actsVentana(7,o).filter(a=>esCarrera(a.tipo)).length>=2).length;
+  add('rend',semanasConstantes>=3?'bien':semanasConstantes>=2?'aviso':'serio',`Corriste 2 veces o más en <b>${semanasConstantes} de las últimas 4 semanas</b>.`);
+  pts.rend+=semanasConstantes>=3?0:semanasConstantes>=2?1:2;
+  const ultRun=ACTS.find(a=>esCarrera(a.tipo)), sin=ultRun?entre(ultRun.f,ultimo):null;
+  if(sin!=null&&sin>=4){const t=sin>=10?'serio':'aviso';pts.rend+=sin>=10?2:1;add('rend',t,`Llevas <b>${sin} días sin correr</b> (la última fue el ${fCorta(ultRun.f)}).`);}
+  const efU=prom(runsU,eficiencia), efP=prom(actsVentana(90,28).filter(a=>esCarrera(a.tipo)),eficiencia);
+  if(efU&&efP){const c=(efU-efP)/efP*100;const t=c>=1?'bien':c>=-3?'aviso':'serio';pts.rend+=t==='serio'?1:0;
+    add('rend',t==='aviso'?'aviso':t,`Eficiencia${ayuda('efic')}: avanzas <b>${n2(efU)} m por latido</b>, ${Math.abs(c)<1?'igual que':c>0?`un ${n0(c)} % más que`:`un ${n0(-c)} % menos que`} en los 3 meses anteriores.`);}
+  const v0=ventana(14,90).filter(d=>d.vo2).pop(), v1=ult('vo2');
+  if(v1&&v0){const c=v1.vo2-v0.vo2;add('rend',c>=0.5?'bien':c>-0.5?'aviso':'serio',`VO2máx <b>${v1.vo2}</b> (${signo(c,1)} en 3 meses).`);}
+  hacer.rend = sin!=null&&sin>=7?'Retoma con 2–3 rodajes suaves en Z2 esta semana antes de volver a meter series o tiradas largas.'
+    : cambio!=null&&cambio>30?'Subiste mucho el volumen: no aumentes más de un 10 % por semana para evitar lesiones.'
+    : efU&&efP&&efU<efP*0.97?'Tu eficiencia bajó: más rodajes suaves en Z2 y revisa si estás descansando lo suficiente.'
+    : 'Vas bien: mantén la mayoría de los rodajes suaves (Z2) y una sesión de calidad por semana.';
+
+  /* Performance */
+  const c=ult('carga_aguda'), est=(ult('estado')||{}).estado, p7=prom(U7,'prep');
+  if(c){const [t,st]=ACWR[c.acwr_estado]||['—','aviso'];pts.perf+=st==='bien'?0:st==='aviso'?1:2;
+    add('perf',st==='critico'?'serio':st,`Carga de la semana${ayuda('carga')}: <b>${n0(c.carga_aguda)}</b>, ${c.acwr_estado==='LOW'?'por debajo de':c.acwr_estado==='OPTIMAL'?'dentro de':'por encima de'} tu rango óptimo (${n0(c.carga_min)}–${n0(c.carga_max)}).`);}
+  if(est){const t=['PRODUCTIVE','PEAKING','MAINTAINING'].includes(est)?'bien':['RECOVERY'].includes(est)?'aviso':'serio';pts.perf+=t==='bien'?0:1;
+    add('perf',t,`Estado de entrenamiento${ayuda('estado')}: <b>${ESTADO[est]||est}</b>, ${ESTADO_TXT[est]||''}.`);}
+  if(p7!=null){const t=p7>=65?'bien':p7>=45?'aviso':'serio';pts.perf+=t==='bien'?0:1;
+    add('perf',t,`Preparación media de los últimos 7 días: <b>${n0(p7)}/100</b>.`);}
+  const b=(ult('bal')||{}).bal;
+  if(b&&b.trainingBalanceFeedbackPhrase){const ok=b.trainingBalanceFeedbackPhrase==='BALANCED';
+    add('perf',ok?'bien':'aviso',`Balance de carga${ayuda('balance')}: <b>${ok?'equilibrado':'desequilibrado'}</b>${ok?' entre rodajes suaves, ritmos medios e intensidad.':'.'}`);}
+
+  // Veredicto: cruzar recuperación con carga
+  const recBuena = pts.desc<=1 && (p7==null||p7>=55);
+  const recMala = pts.desc>=4 || (p7!=null&&p7<40);
+  const cargaBaja = c&&c.acwr_estado==='LOW', cargaAlta = c&&['HIGH','VERY_HIGH'].includes(c.acwr_estado);
+  let titular, st;
+  if(recBuena&&cargaBaja){titular='Estás descansado y con energía, pero entrenando menos de lo habitual.';st='aviso';hacer.perf='Buen momento para subir la carga poco a poco: 3–4 entrenamientos esta semana, casi todos suaves.';}
+  else if(recBuena&&cargaAlta){titular='Estás asimilando bien una carga alta.';st='aviso';hacer.perf='No subas más la carga esta semana y mete al menos un día de descanso total.';}
+  else if(recBuena){titular='Buen equilibrio entre lo que entrenas y lo que te recuperas.';st='bien';hacer.perf='Sigue así: es el escenario ideal para mejorar.';}
+  else if(recMala&&cargaAlta){titular='Mucha carga y poca recuperación: toca bajar el ritmo.';st='serio';hacer.perf='Reduce la intensidad 3–4 días, duerme más y vuelve a subir cuando la VFC regrese a su rango.';}
+  else if(recMala){titular='Tu recuperación está floja aunque no entrenas fuerte.';st='serio';hacer.perf='El cansancio viene de fuera del deporte: revisa sueño, estrés y alimentación antes de entrenar más.';}
+  else {titular=cargaBaja?'Recuperación aceptable y carga baja: hay margen para entrenar más.':'Recuperación aceptable; vigila el descanso.';st='aviso';hacer.perf=cargaBaja?'Suma uno o dos entrenamientos suaves a la semana.':'Mantén la carga y cuida las horas de sueño.';}
+  const estadoArea = a => pts[a]===0?'bien':pts[a]<=2?'aviso':'serio';
+  const NOM={bien:'Bien',aviso:'Atención',serio:'Alerta'};
+  const ICO={bien:'✓',aviso:'!',serio:'▲'};
+  const area=(k,t)=>{const s=k==='perf'?PEOR(items.perf.map(i=>i[0])):estadoArea(k);
+    return `<div class="area" style="border-top-color:var(${ST[s].c})"><h4>${t}${chip(NOM[s],s)}</h4><ul>${items[k].map(([s,x])=>`<li data-t="${s}" data-i="${ICO[s]||'·'}">${x}</li>`).join('')}</ul><div class="hacer"><b>Qué hacer</b>${hacer[k]}</div></div>`;};
+  document.getElementById('valoracion').innerHTML=`
+    <div class="veredicto"><div class="sello" style="background:var(${ST[st].c})" aria-hidden="true">${ICO[st]}</div>
+      <div><h2 class="titular">${titular}</h2><div class="bajada">Valoración de tus últimas 4 semanas comparadas con las 4 anteriores · ${NOM[st]}</div></div></div>
+    <div class="areas">${area('desc','Descanso')}${area('rend','Rendimiento')}${area('perf','Performance')}</div>`;
+}
+
+/* ---------- gráficos ---------- */
+const cruz={id:'cruz',afterDatasetsDraw(c){const a=c.tooltip&&c.tooltip.getActiveElements();if(!a||!a.length||c.config.type==='scatter')return;
+  const x=a[0].element.x,{top,bottom}=c.chartArea,ctx=c.ctx;ctx.save();ctx.strokeStyle=css('--eje');ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,bottom);ctx.stroke();ctx.restore();}};
+function base(){
+  Chart.defaults.font.family='system-ui,-apple-system,"Segoe UI",sans-serif';
+  Chart.defaults.font.size=12;
+  Chart.defaults.color=css('--tenue');
+  Chart.defaults.borderColor=css('--grilla');
+  Chart.defaults.animation={duration:250};
+  Chart.defaults.maintainAspectRatio=false;
+  Chart.defaults.plugins.legend.display=false;
+  Object.assign(Chart.defaults.plugins.tooltip,{enabled:true,backgroundColor:css('--tinta'),titleColor:css('--superficie'),bodyColor:css('--superficie'),footerColor:css('--superficie'),borderWidth:0,padding:12,cornerRadius:10,boxPadding:5,usePointStyle:true,titleFont:{weight:'600',size:13},bodyFont:{size:12.5},footerFont:{weight:'400',size:12},caretSize:6,displayColors:true});
+  Chart.defaults.elements.line.borderWidth=2;
+  Chart.defaults.elements.line.borderCapStyle='round';
+  Chart.defaults.elements.line.borderJoinStyle='round';
+  Chart.defaults.elements.point.radius=0;
+  Chart.defaults.elements.point.hoverRadius=5;
+  Chart.defaults.elements.point.hitRadius=10;
+  Chart.defaults.elements.point.borderWidth=2;
+  Chart.defaults.elements.point.hoverBorderWidth=2;
+}
+const ejes = (extra={}) => ({
+  x:{grid:{display:false},border:{color:css('--eje')},ticks:{maxRotation:0,autoSkipPadding:14},...(extra.x||{})},
+  y:{grid:{color:css('--grilla')},border:{display:false},ticks:{padding:6},...(extra.y||{})}
+});
+const lavar = (hex,a=.12) => {const n=parseInt(hex.replace('#',''),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`;};
+
+function tarjeta(panel,{titulo,k,exp,lectura,leyenda,ancha,tabla}){
+  const el=document.createElement('article');
+  el.className='tarjeta'+(ancha?' ancha':'');
+  el.innerHTML=`<h3>${titulo}${ayuda(k)}</h3>${exp?`<p class="exp">${exp}</p>`:''}${lectura?`<p class="lectura">${lectura}</p>`:''}${leyenda?`<div class="leyenda">${leyenda.map(l=>`<span><i class="${l.linea?'linea':''}" style="background:${l.c}"></i>${l.t}</span>`).join('')}</div>`:''}<div class="lienzo"><canvas></canvas></div>`;
+  if(tabla){const det=document.createElement('details');det.innerHTML='<summary>Ver datos en tabla</summary><div class="tabla-scroll"></div>';det.addEventListener('toggle',()=>{if(det.open)det.querySelector('div').innerHTML=tablaHTML(tabla());});el.appendChild(det);}
+  panel.appendChild(el);
+  return el.querySelector('canvas');
+}
+function tablaHTML({cols,filas}){return `<table><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${filas.map(f=>`<tr>${f.map(v=>`<td>${v??'—'}</td>`).join('')}</tr>`).join('')}</tbody></table>`;}
+function vacio(panel,titulo,msg){const el=document.createElement('article');el.className='tarjeta';el.innerHTML=`<h3>${titulo}</h3><div class="vacio">${msg}</div>`;panel.appendChild(el);}
+function nuevo(canvas,cfg){cfg.plugins=[...(cfg.plugins||[]),cruz];graficos.push(new Chart(canvas,cfg));}
+const tendencia = (arr,k,mejorSiSube,u='',dec=0) => {const n=arr.filter(d=>d[k]!=null);if(n.length<6)return '';const t=Math.max(3,Math.floor(n.length/3));
+  const a=prom(n.slice(0,t),k),b=prom(n.slice(-t),k),d=b-a;const umbral=Math.abs(a)*0.03;
+  if(Math.abs(d)<umbral)return `Estable en el periodo (${dec?n1(b):n0(b)}${u}).`;
+  const bueno=(d>0)===mejorSiSube;return `${d>0?'Subió':'Bajó'} de ${dec?n1(a):n0(a)} a ${dec?n1(b):n0(b)}${u} en el periodo: ${bueno?'buena señal':'conviene vigilarlo'}.`;};
+
+/* ---- Rendimiento ---- */
+function semanas(acts){
+  const m=new Map();
+  let d=lunes(desde());
+  while(d<=ultimo){m.set(d,{km:0,n:0,Carrera:0,Fuerza:0,Caminata:0,Otros:0,z:[0,0,0,0,0]});d=sumarDias(d,7);}
+  acts.forEach(a=>{const w=m.get(lunes(a.f));if(!w)return;w[grupo(a.tipo)]+=a.min||0;if(esCarrera(a.tipo)){w.km+=a.km||0;w.n++;}(a.zonas||[]).forEach((z,i)=>w.z[i]+=z||0);});
+  return [...m.entries()];
+}
+function rendimiento(panel){
+  const A=actsR(), S=semanas(A), et=S.map(([k])=>fCorta(k));
+  const carreras=A.filter(a=>esCarrera(a.tipo)&&a.ritmo&&a.fc&&a.ritmo<12);
+  const totalKm=S.reduce((s,[,w])=>s+w.km,0), semAct=S.filter(([,w])=>w.km>0).length;
+
+  nuevo(tarjeta(panel,{titulo:'Kilómetros corriendo por semana',k:'km',exp:`${n0(totalKm)} km en el periodo · media de ${n1(totalKm/Math.max(1,S.length))} km por semana · corriste en ${semAct} de ${S.length} semanas.`,
+    tabla:()=>({cols:['Semana del','Km','Carreras'],filas:S.map(([k,w])=>[fCorta(k),w.km.toFixed(1),w.n])})}),{
+    type:'bar',data:{labels:et,datasets:[{label:'Km',data:S.map(([,w])=>+w.km.toFixed(1)),backgroundColor:css('--s1'),borderRadius:{topLeft:4,topRight:4},borderSkipped:'bottom',maxBarThickness:24}]},
+    options:{scales:ejes({y:{ticks:{callback:v=>v+' km'}}}),interaction:{mode:'index',intersect:false},plugins:{tooltip:{callbacks:{title:i=>'Semana del '+fLarga(S[i[0].dataIndex][0]),label:i=>` ${n1(i.raw)} km en ${S[i.dataIndex][1].n} carreras`}}}}});
+
+  const G=[['Carrera','--s1'],['Fuerza','--s2'],['Caminata','--s3'],['Otros','--s4']];
+  const minFuerza=S.reduce((s,[,w])=>s+w.Fuerza,0)/Math.max(1,S.length);
+  nuevo(tarjeta(panel,{titulo:'Tiempo de entrenamiento por semana',k:'tiempo',exp:`Minutos en movimiento por tipo de actividad. Fuerza: ${n0(minFuerza)} min por semana de media.`,leyenda:G.map(([t,c])=>({t,c:css(c)})),
+    tabla:()=>({cols:['Semana del',...G.map(x=>x[0])],filas:S.map(([k,w])=>[fCorta(k),...G.map(([t])=>Math.round(w[t]))])})}),{
+    type:'bar',data:{labels:et,datasets:G.map(([t,c],i)=>({label:t,data:S.map(([,w])=>Math.round(w[t])),backgroundColor:css(c),borderColor:css('--superficie'),borderWidth:{top:i?2:0},borderSkipped:false,maxBarThickness:24,borderRadius:i===G.length-1?{topLeft:4,topRight:4}:0}))},
+    options:{scales:ejes({x:{stacked:true},y:{stacked:true,ticks:{callback:v=>v+' min'}}}),interaction:{mode:'index',intersect:false},plugins:{tooltip:{filter:i=>i.raw>0,callbacks:{title:i=>'Semana del '+fLarga(S[i[0].dataIndex][0]),label:i=>` ${i.dataset.label}: ${hm(i.raw/60)}`,footer:i=>{const w=S[i[0].dataIndex][1];return `Total: ${hm((w.Carrera+w.Fuerza+w.Caminata+w.Otros)/60)}`;}}}}}});
+
+  if(carreras.length){
+    const corte=sumarDias(ultimo,-29);
+    const pts=a=>({x:a.ritmo,y:a.fc,a});
+    const rec=carreras.filter(a=>a.f>=corte).map(pts), ant=carreras.filter(a=>a.f<corte).map(pts);
+    const efR=prom(carreras.filter(a=>a.f>=corte),eficiencia), efA=prom(carreras.filter(a=>a.f<corte),eficiencia);
+    nuevo(tarjeta(panel,{titulo:'Ritmo frente a pulso',k:'ritmo_fc',exp:'Cada punto es una carrera. Abajo a la derecha = más rápido con menos pulso.',
+      lectura:efR&&efA?`Este mes avanzas ${n2(efR)} m por latido frente a ${n2(efA)} antes: ${efR>efA*1.01?'tu forma aeróbica mejora.':efR<efA*0.99?'algo menos eficiente (cansancio, calor o cuestas).':'igual de eficiente.'}`:'',
+      leyenda:[{t:'Últimos 30 días',c:css('--s1')},{t:'Antes',c:css('--s2')}],
+      tabla:()=>({cols:['Fecha','Km','Ritmo','FC media'],filas:carreras.map(a=>[fCorta(a.f),a.km?.toFixed(1),ritmo(a.ritmo)+' /km',a.fc])})}),{
+      type:'scatter',data:{datasets:[
+        {label:'Antes',data:ant,backgroundColor:css('--s2'),borderColor:css('--superficie'),pointRadius:5,pointHoverRadius:7},
+        {label:'Últimos 30 días',data:rec,backgroundColor:css('--s1'),borderColor:css('--superficie'),pointRadius:5,pointHoverRadius:7}]},
+      options:{scales:ejes({x:{reverse:true,grid:{display:false},title:{display:true,text:'Ritmo (min/km) · más rápido →',color:css('--tenue')},ticks:{callback:v=>ritmo(v)}},y:{title:{display:true,text:'Pulso medio (ppm)',color:css('--tenue')}}}),
+        plugins:{tooltip:{callbacks:{title:i=>{const a=i[0].raw.a;return `${fLarga(a.f)} · ${a.nombre||''}`;},label:i=>{const a=i.raw.a;return ` ${a.km?.toFixed(1)} km a ${ritmo(a.ritmo)}/km`;},afterLabel:i=>{const a=i.raw.a;return ` Pulso medio ${a.fc} ppm${a.desnivel?` · desnivel ${a.desnivel} m`:''}`;}}}}}});
+  } else vacio(panel,'Ritmo frente a pulso','No hay carreras en este periodo.');
+
+  const Z=['--q200','--q300','--q400','--q550','--q700'], ZN=['Z1 Muy suave','Z2 Fácil','Z3 Aeróbica','Z4 Umbral','Z5 Máximo'];
+  const zt=[0,1,2,3,4].map(i=>S.reduce((s,[,w])=>s+w.z[i],0)), ztot=zt.reduce((a,b)=>a+b,0)||1, suave=Math.round((zt[0]+zt[1])/ztot*100);
+  nuevo(tarjeta(panel,{titulo:'Tiempo en zonas de pulso',k:'zonas',exp:'Minutos por semana en cada zona, sumando todas las actividades.',
+    lectura:`El ${suave} % de tu tiempo fue suave (Z1–Z2) y el ${Math.round((zt[3]+zt[4])/ztot*100)} % intenso (Z4–Z5). ${suave>=70?'Buen reparto para corredor de fondo.':'Para fondo, lo habitual es ~80 % suave: puedes ir más lento en los rodajes.'}`,
+    leyenda:ZN.map((t,i)=>({t,c:css(Z[i])})),
+    tabla:()=>({cols:['Semana del',...ZN.map(z=>z.slice(0,2))],filas:S.map(([k,w])=>[fCorta(k),...w.z.map(Math.round)])})}),{
+    type:'bar',data:{labels:et,datasets:ZN.map((t,i)=>({label:t,data:S.map(([,w])=>Math.round(w.z[i])),backgroundColor:css(Z[i]),borderColor:css('--superficie'),borderWidth:{top:i?2:0},borderSkipped:false,maxBarThickness:24,borderRadius:i===4?{topLeft:4,topRight:4}:0}))},
+    options:{scales:ejes({x:{stacked:true},y:{stacked:true,ticks:{callback:v=>v+' min'}}}),interaction:{mode:'index',intersect:false},plugins:{tooltip:{filter:i=>i.raw>0,callbacks:{title:i=>'Semana del '+fLarga(S[i[0].dataIndex][0]),label:i=>` ${i.dataset.label}: ${i.raw} min`}}}}});
+
+  const dv=agrupar(diasR()).filter(d=>d.vo2!=null);
+  if(dv.length){
+    nuevo(tarjeta(panel,{titulo:'VO2máx',k:'vo2',exp:`Tu capacidad aeróbica según el reloj. Hoy: ${dv[dv.length-1].vo2}.`,lectura:tendencia(dv,'vo2',true,'',1),
+      tabla:()=>({cols:['Fecha','VO2máx'],filas:dv.map(d=>[etiquetaDia(d),d.vo2])})}),{
+      type:'line',data:{labels:dv.map(d=>fCorta(d.f)),datasets:[{label:'VO2máx',data:dv.map(d=>d.vo2),borderColor:css('--s1'),backgroundColor:lavar(css('--s1'),.10),fill:true,stepped:!SEMANAL(),tension:SEMANAL()?.3:0,pointBackgroundColor:css('--s1'),pointBorderColor:css('--superficie')}]},
+      options:{scales:ejes({y:{grace:1}}),interaction:{mode:'index',intersect:false},plugins:{tooltip:{callbacks:{title:i=>etiquetaDia(dv[i[0].dataIndex]),label:i=>` VO2máx ${i.raw}`}}}}});
+  } else vacio(panel,'VO2máx','Sin datos de VO2máx en este periodo.');
+
+  const P=D.predicciones;
+  if(P&&Object.values(P).some(Boolean)){
+    const el=document.createElement('article');el.className='tarjeta';
+    el.innerHTML=`<h3>Predicciones de carrera${ayuda('pred')}</h3><p class="exp">Lo que el reloj estima que podrías correr hoy en cada distancia.</p><div class="predicciones">${[['5K','time5K',5],['10K','time10K',10],['Media maratón','timeHalfMarathon',21.0975],['Maratón','timeMarathon',42.195]].map(([t,k,km])=>`<div><div class="d">${t}</div><div class="t">${segs(P[k])}</div><div class="d">${P[k]?ritmo(P[k]/60/km)+' /km':''}</div></div>`).join('')}</div>`;
+    panel.appendChild(el);
+  }
+
+  const el=document.createElement('article');el.className='tarjeta ancha';
+  el.innerHTML=`<h3>Actividades</h3><p class="exp">${A.length} en el periodo, de la más reciente a la más antigua.</p><div class="tabla-scroll" style="max-height:420px">${tablaHTML({cols:['Fecha','Actividad','Tipo','Km','Tiempo','Ritmo','Pulso medio','Carga','Efecto'],
+    filas:A.map(a=>[`${fCorta(a.f)} <span style="color:var(--tenue)">${a.hora}</span>`,`<span style="display:block;text-align:left;max-width:220px;overflow:hidden;text-overflow:ellipsis">${a.nombre||''}</span>`,TIPO[a.tipo]||a.tipo,a.km?a.km.toFixed(2):'',hm(a.min/60),a.ritmo?ritmo(a.ritmo):'',a.fc??'',a.carga??'',EFECTO[a.efecto]||''])})}</div>`;
+  panel.appendChild(el);
+}
+
+/* ---- Descanso ---- */
+function descanso(panel){
+  const R=agrupar(diasR()), et=R.map(d=>fCorta(d.f)), nota=SEMANAL()?' Con periodos largos se muestran promedios semanales.':'';
+  const conS=R.filter(d=>d.sueno_h);
+  const pr=k=>prom(R,k);
+
+  const F=[['Profundo','profundo','--q700'],['REM','rem','--q400'],['Ligero','ligero','--q200'],['Despierto','despierto','--neutro']];
+  const pProf=pr('profundo')/pr('sueno_h')*100, pRem=pr('rem')/pr('sueno_h')*100;
+  nuevo(tarjeta(panel,{titulo:'Horas de sueño por fase',k:'fases',exp:`Media: ${hm(pr('sueno_h'))} por noche. Garmin calcula que necesitas unas 8 h.${nota}`,ancha:true,
+    lectura:isNaN(pProf)?'':`Profundo ${n0(pProf)} % (${pProf>=16?'bien':'bajo'}, ideal 16–33 %) · REM ${n0(pRem)} % (${pRem>=21?'bien':'bajo'}, ideal 21–31 %).`,
+    leyenda:F.map(([t,,c])=>({t,c:css(c)})),
+    tabla:()=>({cols:['Noche','Total','Profundo','REM','Ligero','Despierto','Puntaje'],filas:conS.map(d=>[etiquetaDia(d),hm(d.sueno_h),hm(d.profundo),hm(d.rem),hm(d.ligero),hm(d.despierto),d.sueno])})}),{
+    type:'bar',data:{labels:et,datasets:F.map(([t,k,c],i)=>({label:t,data:R.map(d=>d[k]),backgroundColor:css(c),borderColor:css('--superficie'),borderWidth:{top:i?2:0},borderSkipped:false,maxBarThickness:24,borderRadius:i===3?{topLeft:4,topRight:4}:0}))},
+    options:{scales:ejes({x:{stacked:true},y:{stacked:true,ticks:{callback:v=>v+' h'}}}),interaction:{mode:'index',intersect:false},
+      plugins:{tooltip:{filter:i=>i.raw>0,callbacks:{title:i=>etiquetaDia(R[i[0].dataIndex]),label:i=>` ${i.dataset.label}: ${hm(i.raw)}`,footer:i=>{const d=R[i[0].dataIndex];return d.sueno_h?`Total ${hm(d.sueno_h)} · puntaje ${n0(d.sueno)}/100`:'';}}}}}});
+
+  const linea=(titulo,k,campo,exp,lectura,unidad,color,opc={})=>{
+    const v=R.filter(d=>d[campo]!=null);
+    if(!v.length)return vacio(panel,titulo,'Sin datos en este periodo.');
+    nuevo(tarjeta(panel,{titulo,k,exp:exp+nota,lectura,tabla:()=>({cols:['Fecha',titulo],filas:v.map(d=>[etiquetaDia(d),n1(d[campo])])})}),{
+      type:'line',data:{labels:et,datasets:[{label:titulo,data:R.map(d=>d[campo]),borderColor:css(color),backgroundColor:lavar(css(color),.10),fill:opc.fill??false,spanGaps:true,pointBackgroundColor:css(color),pointBorderColor:css('--superficie'),tension:.25}]},
+      options:{scales:ejes({y:opc.y||{}}),interaction:{mode:'index',intersect:false},plugins:{tooltip:{callbacks:{title:i=>etiquetaDia(R[i[0].dataIndex]),label:i=>` ${n1(i.raw)} ${unidad}`,footer:opc.pie?i=>opc.pie(i[0].raw):undefined}}}}});
+  };
+  linea('Puntaje de sueño','sueno','sueno',`Media: ${n0(pr('sueno'))}/100.`,tendencia(R,'sueno',true,'/100'),'/100','--s1',{y:{suggestedMin:40,max:100},pie:v=>v>=80?'Bueno':v>=60?'Regular':'Malo'});
+
+  const vh=R.filter(d=>d.hrv!=null);
+  if(vh.length){
+    nuevo(tarjeta(panel,{titulo:'VFC nocturna',k:'hrv',exp:'Puntos: cada noche. Línea: media de 7 días. Franja verde: tu rango normal.'+nota,lectura:tendencia(R,'hrv_sem',true,' ms'),
+      leyenda:[{t:'Noche',c:css('--s1')},{t:'Media 7 días',c:css('--s2'),linea:true},{t:'Tu rango normal',c:lavar(css('--s3'),.35)}],
+      tabla:()=>({cols:['Noche','VFC','Media 7 d','Rango normal'],filas:vh.map(d=>[etiquetaDia(d),n0(d.hrv),n0(d.hrv_sem),`${n0(d.hrv_lo)}–${n0(d.hrv_hi)}`])})}),{
+      type:'line',data:{labels:et,datasets:[
+        {label:'Rango bajo',data:R.map(d=>d.hrv_lo),borderWidth:0,pointRadius:0,pointHitRadius:0,pointHoverRadius:0,spanGaps:true},
+        {label:'Tu rango normal',data:R.map(d=>d.hrv_hi),borderWidth:0,pointRadius:0,pointHitRadius:0,pointHoverRadius:0,backgroundColor:lavar(css('--s3'),.14),fill:'-1',spanGaps:true},
+        {label:'Media 7 días',data:R.map(d=>d.hrv_sem),borderColor:css('--s2'),spanGaps:true,tension:.3,pointBackgroundColor:css('--s2'),pointBorderColor:css('--superficie')},
+        {label:'Noche',data:R.map(d=>d.hrv),showLine:false,pointRadius:3.5,pointBackgroundColor:css('--s1'),pointBorderColor:css('--superficie'),pointBorderWidth:1.5,borderColor:css('--s1')}]},
+      options:{scales:ejes(),interaction:{mode:'index',intersect:false},plugins:{tooltip:{filter:i=>i.datasetIndex>1&&i.raw!=null,callbacks:{title:i=>etiquetaDia(R[i[0].dataIndex]),label:i=>` ${i.dataset.label}: ${n0(i.raw)} ms`,footer:i=>{const d=R[i[0].dataIndex];if(!d.hrv_lo)return '';const v=d.hrv_sem;return `Rango normal ${n0(d.hrv_lo)}–${n0(d.hrv_hi)} ms`+(v!=null?(v<d.hrv_lo?' · por debajo':v>d.hrv_hi?' · por encima':' · dentro'):'');}}}}}});
+  } else vacio(panel,'VFC nocturna','Sin datos en este periodo.');
+
+  linea('Frecuencia cardiaca en reposo','fc_reposo','fc_reposo',`Media: ${n0(pr('fc_reposo'))} ppm.`,tendencia(R,'fc_reposo',false,' ppm'),'ppm','--s1',{y:{grace:2}});
+
+  const vb=R.filter(d=>d.bb_max!=null);
+  if(vb.length){
+    nuevo(tarjeta(panel,{titulo:'Body Battery',k:'bb',exp:'Cada barra va de tu energía mínima a la máxima del día.'+nota,lectura:`Tu máximo diario medio es ${n0(prom(vb,'bb_max'))}: ${prom(vb,'bb_max')>=75?'recargas bien al dormir.':'recargas poco; lo ideal es despertar sobre 75.'}`,
+      tabla:()=>({cols:['Día','Mínimo','Máximo','Recargado'],filas:vb.map(d=>[etiquetaDia(d),n0(d.bb_min),n0(d.bb_max),n0(d.bb_carga)])})}),{
+      type:'bar',data:{labels:et,datasets:[{label:'Body Battery',data:R.map(d=>d.bb_max!=null?[d.bb_min,d.bb_max]:null),backgroundColor:css('--s1'),borderRadius:4,borderSkipped:false,maxBarThickness:14}]},
+      options:{scales:ejes({y:{min:0,max:100}}),interaction:{mode:'index',intersect:false},plugins:{tooltip:{callbacks:{title:i=>etiquetaDia(R[i[0].dataIndex]),label:i=>` Mínimo ${n0(i.raw[0])} · máximo ${n0(i.raw[1])}`,footer:i=>{const d=R[i[0].dataIndex];return d.bb_carga?`Recargó ${n0(d.bb_carga)} puntos`:'';}}}}}});
+  }
+  linea('Estrés medio del día','estres','estres',`Media: ${n0(pr('estres'))} (${pr('estres')<=25?'descanso':pr('estres')<=50?'bajo':pr('estres')<=75?'medio':'alto'}).`,tendencia(R,'estres',false,''),'','--s1',{y:{min:0,suggestedMax:60},pie:v=>v<=25?'Descanso':v<=50?'Estrés bajo':v<=75?'Estrés medio':'Estrés alto'});
+}
+
+/* ---- Performance ---- */
+function performance(panel){
+  const R=agrupar(diasR()), et=R.map(d=>fCorta(d.f)), nota=SEMANAL()?' Con periodos largos se muestran promedios semanales.':'';
+
+  const vc=R.filter(d=>d.carga_aguda!=null);
+  if(vc.length){
+    const dentro=Math.round(vc.filter(d=>d.carga_min!=null&&d.carga_aguda>=d.carga_min&&d.carga_aguda<=d.carga_max).length/vc.length*100);
+    nuevo(tarjeta(panel,{titulo:'Carga de la semana',k:'carga',exp:'Línea: el esfuerzo acumulado de los 7 días anteriores a cada fecha. Franja verde: tu rango óptimo.'+nota,ancha:true,
+      lectura:`Estuviste dentro de tu rango óptimo el ${dentro} % de los días del periodo.`,
+      leyenda:[{t:'Carga de la semana',c:css('--s1'),linea:true},{t:'Rango óptimo',c:lavar(css('--s3'),.35)}],
+      tabla:()=>({cols:['Día','Carga','Óptimo mín','Óptimo máx','Estado'],filas:vc.map(d=>[etiquetaDia(d),n0(d.carga_aguda),n0(d.carga_min),n0(d.carga_max),(ACWR[d.acwr_estado]||['—'])[0]])})}),{
+      type:'line',data:{labels:et,datasets:[
+        {label:'min',data:R.map(d=>d.carga_min),borderWidth:0,pointRadius:0,pointHitRadius:0,pointHoverRadius:0,spanGaps:true},
+        {label:'Rango óptimo',data:R.map(d=>d.carga_max),borderWidth:0,pointRadius:0,pointHitRadius:0,pointHoverRadius:0,fill:'-1',backgroundColor:lavar(css('--s3'),.14),spanGaps:true},
+        {label:'Carga de la semana',data:R.map(d=>d.carga_aguda),borderColor:css('--s1'),spanGaps:true,tension:.25,pointBackgroundColor:css('--s1'),pointBorderColor:css('--superficie')}]},
+      options:{scales:ejes({y:{beginAtZero:true}}),interaction:{mode:'index',intersect:false},plugins:{tooltip:{filter:i=>i.datasetIndex===2,callbacks:{title:i=>etiquetaDia(R[i[0].dataIndex]),label:i=>` Carga: ${n0(i.raw)}`,footer:i=>{const d=R[i[0].dataIndex];if(d.carga_min==null)return '';const pos=d.carga_aguda<d.carga_min?'Por debajo del óptimo':d.carga_aguda>d.carga_max?'Por encima del óptimo':'Dentro del óptimo';return `Óptimo ${n0(d.carga_min)}–${n0(d.carga_max)} · ${pos}`+(d.estado?`\nEstado: ${ESTADO[d.estado]||d.estado}`:'');}}}}}});
+  }
+
+  const vp=R.filter(d=>d.prep!=null);
+  if(vp.length){
+    const nivel=d=>(PREP[d.prep_nivel||prepPorNota(d.prep)]||[,'neutro'])[1];
+    const usados=[...new Set(vp.map(nivel))];
+    const orden=['bien','aviso','serio','critico'].filter(s=>usados.includes(s));
+    const nombre={bien:'Alta (75+)',aviso:'Moderada (50–74)',serio:'Baja (25–49)',critico:'Muy baja (<25)'};
+    const altos=Math.round(vp.filter(d=>nivel(d)==='bien').length/vp.length*100);
+    nuevo(tarjeta(panel,{titulo:'Preparación para entrenar',k:'prep',exp:`Media: ${n0(prom(vp,'prep'))}/100.${nota}`,lectura:`Amaneciste con preparación alta el ${altos} % de los días.`,
+      leyenda:orden.map(s=>({t:`${ST[s].ico} ${nombre[s]}`,c:css(ST[s].c)})),
+      tabla:()=>({cols:['Día','Puntaje','Nivel'],filas:vp.map(d=>[etiquetaDia(d),n0(d.prep),(PREP[d.prep_nivel]||['—'])[0]])})}),{
+      type:'bar',data:{labels:et,datasets:[{label:'Preparación',data:R.map(d=>d.prep),backgroundColor:R.map(d=>css(ST[nivel(d)].c)),borderRadius:{topLeft:4,topRight:4},borderSkipped:'bottom',maxBarThickness:14}]},
+      options:{scales:ejes({y:{min:0,max:100}}),interaction:{mode:'index',intersect:false},plugins:{tooltip:{callbacks:{title:i=>etiquetaDia(R[i[0].dataIndex]),label:i=>{const d=R[i.dataIndex];const [t,st]=PREP[d.prep_nivel||prepPorNota(d.prep)]||['—','neutro'];return ` ${n0(d.prep)}/100 · ${t}`;},footer:i=>{const d=R[i[0].dataIndex];return d.semanal?'':`Sueño ${d.sueno??'—'} · VFC ${d.hrv??'—'} ms`;}}}}}});
+  }
+
+  const sp=diasR().filter(d=>d.prep!=null&&d.sueno!=null);
+  if(sp.length>5){
+    const buenas=prom(sp.filter(d=>d.sueno>=80),'prep'), malas=prom(sp.filter(d=>d.sueno<65),'prep');
+    nuevo(tarjeta(panel,{titulo:'¿Cuánto pesa el sueño en tu preparación?',k:'sueno_prep',exp:'Cada punto es un día.',
+      lectura:buenas!=null&&malas!=null?`Tras noches buenas (80+) amaneces con ${n0(buenas)}/100 de preparación; tras noches malas (<65), con ${n0(malas)}/100.`:'',
+      tabla:()=>({cols:['Día','Sueño','Preparación'],filas:sp.map(d=>[fLarga(d.f),d.sueno,d.prep])})}),{
+      type:'scatter',data:{datasets:[{label:'Día',data:sp.map(d=>({x:d.sueno,y:d.prep,d})),backgroundColor:css('--s1'),borderColor:css('--superficie'),pointRadius:5,pointHoverRadius:7}]},
+      options:{scales:ejes({x:{grid:{display:false},title:{display:true,text:'Puntaje de sueño de la noche',color:css('--tenue')}},y:{min:0,max:100,title:{display:true,text:'Preparación al despertar',color:css('--tenue')}}}),
+        plugins:{tooltip:{callbacks:{title:i=>fLarga(i[0].raw.d.f),label:i=>` Sueño ${i.raw.x}/100 → preparación ${i.raw.y}/100`}}}}});
+  }
+
+  const b=(ult('bal')||{}).bal;
+  if(b){
+    const filas=[['Aeróbica baja','rodajes suaves','monthlyLoadAerobicLow','monthlyLoadAerobicLowTargetMin','monthlyLoadAerobicLowTargetMax'],['Aeróbica alta','tempo y umbral','monthlyLoadAerobicHigh','monthlyLoadAerobicHighTargetMin','monthlyLoadAerobicHighTargetMax'],['Anaeróbica','series cortas','monthlyLoadAnaerobic','monthlyLoadAnaerobicTargetMin','monthlyLoadAnaerobicTargetMax']];
+    const tope=Math.max(...filas.flatMap(([,,v,,mx])=>[b[v]||0,b[mx]||0]))*1.1;
+    const pct=x=>`${Math.min(100,(x||0)/tope*100)}%`;
+    const FR={BALANCED:'Equilibrado',AEROBIC_LOW_SHORTAGE:'Faltan rodajes suaves',AEROBIC_HIGH_SHORTAGE:'Falta trabajo de tempo/umbral',ANAEROBIC_SHORTAGE:'Faltan series intensas',AEROBIC_LOW_EXCESS:'Demasiado rodaje suave',AEROBIC_HIGH_EXCESS:'Demasiado tempo/umbral',ANAEROBIC_EXCESS:'Demasiada intensidad'};
+    const el=document.createElement('article');el.className='tarjeta';
+    el.innerHTML=`<h3>Balance de carga (últimas 4 semanas)${ayuda('balance')}</h3><p class="exp">Barra clara: tu objetivo. Marca oscura: dónde estás.</p><p class="lectura">${FR[b.trainingBalanceFeedbackPhrase]||b.trainingBalanceFeedbackPhrase||'—'}.</p>
+    <div class="balance">${filas.map(([t,sub,v,mn,mx])=>{const dentro=b[v]>=b[mn]&&b[v]<=b[mx];const st=dentro?'bien':(b[v]<b[mn]?'aviso':'serio');return `<div class="fila"><div class="top"><span>${t} <span style="color:var(--tenue)">· ${sub}</span></span><span>${n0(b[v])} <span style="color:var(--tenue)">/ objetivo ${n0(b[mn])}–${n0(b[mx])}</span> ${chip(dentro?'En rango':b[v]<b[mn]?'Falta':'Exceso',st)}</span></div><div class="pista"><div class="rango" style="left:${pct(b[mn])};width:calc(${pct(b[mx])} - ${pct(b[mn])})"></div><div class="marca" style="left:${pct(b[v])}"></div></div></div>`;}).join('')}</div>`;
+    panel.appendChild(el);
+  }
+}
+
+/* ---------- render ---------- */
+const paneles={rend:rendimiento,desc:descanso,perf:performance};
+const INTRO={rend:'Rendimiento: cuánto entrenas y cómo responde tu cuerpo al correr.',desc:'Descanso: cómo duermes y cuánto te recuperas día a día.',perf:'Performance: el equilibrio entre la carga que haces y lo preparado que estás para asumirla.'};
+function render(){
+  ocultar();
+  graficos.splice(0).forEach(c=>c.destroy());
+  base();
+  fichas();
+  valorar();
+  document.querySelectorAll('#rango button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.d===rango));
+  document.querySelectorAll('.pestanas button').forEach(b=>b.setAttribute('aria-selected',b.dataset.t===pestana));
+  document.getElementById('introPestana').textContent=INTRO[pestana];
+  Object.keys(paneles).forEach(k=>{const p=document.getElementById('p-'+k);p.hidden=k!==pestana;p.innerHTML='';});
+  paneles[pestana](document.getElementById('p-'+pestana));
+}
+document.getElementById('rango').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;rango=+b.dataset.d;guardar('rango',rango);render();});
+document.querySelector('.pestanas').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;pestana=b.dataset.t;guardar('tab',pestana);render();});
+try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',render);}catch(e){}
+/* Chrome borra los lienzos (canvas) de las pestañas en segundo plano para ahorrar memoria.
+   Al volver a la pestaña, o si el lienzo se restaura, se redibujan los gráficos. */
+const redibujar=()=>{graficos.forEach(c=>{try{c.resize();c.update('none');}catch(e){}});};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)redibujar();});
+addEventListener('pageshow',e=>{if(e.persisted)render();});
+addEventListener('focus',redibujar);
+document.addEventListener('contextrestored',e=>{if(e.target.tagName==='CANVAS')redibujar();},true);
+document.addEventListener('contextlost',e=>{if(e.target.tagName==='CANVAS')e.preventDefault();},true);
+if(paneles[location.hash.slice(1)])pestana=location.hash.slice(1);
+render();
+}
+
+/* ---------- arranque: datos en claro (local) o cifrados (web) ---------- */
+(async function(){
+  const PLANO=/*__DATOS__*/null, CIF=/*__CIFRADO__*/null;
+  if(PLANO)return iniciar(PLANO);
+  const candado=document.getElementById('candado');
+  if(!CIF){candado.hidden=false;candado.querySelector('form').innerHTML='<p>Sin datos todavía.</p>';return;}
+  const b=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+  async function abrir(pw){
+    const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
+    const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b(CIF.s),iterations:CIF.it,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['decrypt']);
+    const gz=await crypto.subtle.decrypt({name:'AES-GCM',iv:b(CIF.i)},key,b(CIF.c));
+    return JSON.parse(await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream('gzip'))).text());
+  }
+  let guardada=null;try{guardada=localStorage.getItem('sd_clave');}catch(e){}
+  if(guardada){try{const D=await abrir(guardada);return iniciar(D);}catch(e){try{localStorage.removeItem('sd_clave')}catch(_){}}}
+  candado.hidden=false;
+  const f=candado.querySelector('form'),inp=f.querySelector('input[type=password]'),err=f.querySelector('.error'),btn=f.querySelector('button');
+  inp.focus();
+  f.addEventListener('submit',async e=>{e.preventDefault();err.textContent='';btn.disabled=true;btn.textContent='Abriendo…';
+    try{const D=await abrir(inp.value);
+      if(f.querySelector('#recordar').checked){try{localStorage.setItem('sd_clave',inp.value)}catch(_){}}
+      candado.hidden=true;iniciar(D);}
+    catch(x){err.textContent='Contraseña incorrecta.';btn.disabled=false;btn.textContent='Abrir';inp.select();}});
+})();
+document.getElementById('olvidar').addEventListener('click',e=>{e.preventDefault();try{localStorage.removeItem('sd_clave')}catch(_){}location.reload();});
+</script>
+</body>
+</html>
