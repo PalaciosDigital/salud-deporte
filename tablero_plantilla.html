@@ -639,11 +639,16 @@ function render(){
   document.querySelectorAll('#rango button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.d===rango));
   document.querySelectorAll('.pestanas button').forEach(b=>b.setAttribute('aria-selected',b.dataset.t===pestana));
   document.getElementById('introPestana').textContent=INTRO[pestana];
-  Object.keys(paneles).forEach(k=>{const p=document.getElementById('p-'+k);p.hidden=k!==pestana;p.innerHTML='';});
+  // Mantener el alto mientras se rehace el panel: así la página no "salta" ni te deja en una zona vacía
+  const alto=Math.max(...Object.keys(paneles).map(k=>document.getElementById('p-'+k).offsetHeight));
+  Object.keys(paneles).forEach(k=>{const p=document.getElementById('p-'+k);p.style.minHeight=alto+'px';p.hidden=k!==pestana;p.innerHTML='';});
   paneles[pestana](document.getElementById('p-'+pestana));
+  requestAnimationFrame(()=>Object.keys(paneles).forEach(k=>document.getElementById('p-'+k).style.minHeight=''));
 }
-document.getElementById('rango').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;rango=+b.dataset.d;guardar('rango',rango);render();});
-document.querySelector('.pestanas').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;pestana=b.dataset.t;guardar('tab',pestana);render();});
+// Tras cambiar pestaña o periodo, si bajaste mucho, vuelve al inicio de los gráficos
+function alInicioDeGraficos(){const barra=document.getElementById('barra');const y=barra.parentElement.querySelector('#introPestana').getBoundingClientRect().top+scrollY-barra.offsetHeight-8;if(scrollY>y)scrollTo({top:y,behavior:'smooth'});}
+document.getElementById('rango').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;rango=+b.dataset.d;guardar('rango',rango);render();alInicioDeGraficos();});
+document.querySelector('.pestanas').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;pestana=b.dataset.t;guardar('tab',pestana);render();alInicioDeGraficos();});
 try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',render);}catch(e){}
 /* Chrome borra los lienzos (canvas) de las pestañas en segundo plano para ahorrar memoria.
    Al volver a la pestaña, o si el lienzo se restaura, se redibujan los gráficos. */
