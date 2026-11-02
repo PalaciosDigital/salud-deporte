@@ -127,7 +127,7 @@ def resumir_predicciones(pred):
     return {k: pred.get(k) for k in ["time5K", "time10K", "timeHalfMarathon", "timeMarathon"]}
 
 
-EXTRAS = ("umbrales", "plan", "marcas", "segmentos")  # datos opcionales que también lee la plantilla
+EXTRAS = ("umbrales", "plan", "marcas", "segmentos", "laboral")  # datos opcionales que también lee la plantilla
 
 
 def paquete(dias: dict, actividades: dict, predicciones, **extra) -> dict:
@@ -151,8 +151,28 @@ def resumir_umbrales(lt):
             "fecha": (sh.get("calendarDate") or "")[:10]}
 
 
-def renderizar(datos: dict, contrasena=None) -> str:
+def laboral_para_entrenador(lab):
+    """El entrenador ve cuánto trabajas y qué tipo de día es, no el contenido de tus tareas."""
+    if not lab:
+        return None
+    por_dia = {}
+    for t in lab.get("tareas") or []:
+        d = por_dia.setdefault(t["f"], {"f": t["f"], "h": 0, "n": 0, "entregas": 0, "reuniones": 0})
+        d["h"] += t.get("h") or 0
+        d["n"] += 1
+        d["entregas"] += (t.get("tipo") or "").lower() == "entrega"
+        d["reuniones"] += (t.get("tipo") or "").lower() == "reunión"
+    dias = [{"f": d["f"], "tipo": d["tipo"], "det": "Turno de redes" if "turno" in (d.get("det") or "").lower() else ""}
+            for d in lab.get("dias") or []]
+    semanas = [{k: s.get(k) for k in ("f", "habiles", "disp", "comp", "carga", "veredicto")} for s in lab.get("semanas") or []]
+    return {"resumen_dias": sorted(por_dia.values(), key=lambda d: d["f"]), "dias": dias, "semanas": semanas}
+
+
+def renderizar(datos: dict, contrasena=None, vista: str = "atleta") -> str:
     plantilla = (BASE / "tablero_plantilla.html").read_text()
+    datos = {**datos, "vista": vista}
+    if vista == "entrenador" and datos.get("laboral"):
+        datos["laboral"] = laboral_para_entrenador(datos["laboral"])
     if contrasena:
         from cifrado import cifrar_para_web
         cif = cifrar_para_web(json.dumps(datos, ensure_ascii=False, separators=(",", ":")), contrasena)

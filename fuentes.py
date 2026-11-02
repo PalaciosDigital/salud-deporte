@@ -281,3 +281,90 @@ def actualizar_plan_garmin(g, h):
     print(f"Plan (calendario de Garmin): {len(plan)} entrenamientos ({futuros} desde hoy). Origen: {proveedores}")
     if not h.get("tp_ical"):
         h["plan"] = sorted(plan, key=lambda p: (p["f"], p["t"]))
+
+
+# ---------------------------------------------------------------- Planificación laboral (Google Sheets)
+# La hoja está compartida por enlace: se lee como CSV sin credenciales. El ID vive solo en datos.enc.
+import csv
+import io
+
+HOJAS = {"tareas": 578440063, "calendario": 777001, "capacidad": 1517959498}
+MESES_ES = {m: i for i, m in enumerate(["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
+                                        "septiembre", "octubre", "noviembre", "diciembre"], 1)}
+
+
+def _fecha_es(t):
+    """'octubre 29, 2026' / '2026-10-29' / '29/10/2026' -> '2026-10-29'."""
+    t = (t or "").strip().lower()
+    m = re.match(r"([a-záéíóú]+)\s+(\d{1,2}),\s*(\d{4})", t)
+    if m and m.group(1) in MESES_ES:
+        return f"{m.group(3)}-{MESES_ES[m.group(1)]:02d}-{int(m.group(2)):02d}"
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2})", t)
+    if m:
+        return m.group(0)
+    m = re.match(r"(\d{1,2})/(\d{1,2})/(\d{4})", t)
+    return f"{m.group(3)}-{int(m.group(2)):02d}-{int(m.group(1)):02d}" if m else None
+
+
+def _num(t):
+    try:
+        return float(str(t).replace("%", "").replace(",", ".").strip())
+    except ValueError:
+        return None
+
+
+def _csv(hoja_id, gid):
+    url = f"https://docs.google.com/spreadsheets/d/{hoja_id}/export?format=csv&gid={gid}"
+    with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=30) as r:
+        return list(csv.reader(io.StringIO(r.read().decode("utf-8", "replace"))))
+
+
+def _tabla(filas, primera_col):
+    """Devuelve (encabezado, filas) a partir de la fila cuya primera celda es `primera_col`."""
+    for i, f in enumerate(filas):
+        if f and f[0].strip().lower() == primera_col:
+            return [c.strip().lower() for c in f], filas[i + 1:]
+    return [], []
+
+
+def actualizar_laboral(h):
+    hoja = h.get("hoja_laboral")
+    if not hoja:
+        return
+    desde, hasta = (date.today() - timedelta(days=120)).isoformat(), (date.today() + timedelta(days=90)).isoformat()
+
+    cab, filas = _tabla(_csv(hoja, HOJAS["tareas"]), "fecha")
+    col = {k: cab.index(k) for k in ("fecha", "proyecto", "tarea", "tipo", "horas", "estado") if k in cab}
+    tareas = []
+    for f in filas:
+        fe = _fecha_es(f[col["fecha"]]) if "fecha" in col and len(f) > col["fecha"] else None
+        if not fe or not (desde <= fe <= hasta):
+            continue
+        g_ = lambda k: f[col[k]].strip() if k in col and len(f) > col[k] else ""
+        if not g_("tarea"):
+            continue
+        tareas.append({"f": fe, "proy": g_("proyecto")[:80], "tarea": g_("tarea")[:140], "tipo": g_("tipo"),
+                       "h": _num(g_("horas")), "estado": g_("estado")})
+
+    # Días especiales: bloque "Fecha / Tipo / Detalle" a la derecha del calendario
+    dias = []
+    for f in _csv(hoja, HOJAS["calendario"]):
+        for j in range(len(f) - 1):
+            fe = _fecha_es(f[j])
+            if fe and f[j + 1].strip() in ("Libre", "Feriado", "Hito", "") and len(f[j]) > 10 and desde <= fe <= hasta:
+                tipo = f[j + 1].strip() or "Nota"
+                dias.append({"f": fe, "tipo": tipo, "det": (f[j + 2].strip() if len(f) > j + 2 else "")[:80]})
+                break
+
+    cab, filas = _tabla(_csv(hoja, HOJAS["capacidad"]), "semana (lunes)")
+    semanas = []
+    for f in filas:
+        fe = _fecha_es(f[0]) if f else None
+        if not fe:
+            continue
+        v = lambda i: f[i].strip() if len(f) > i else ""
+        semanas.append({"f": fe, "habiles": _num(v(1)), "disp": _num(v(2)), "comp": _num(v(3)),
+                        "carga": _num(v(4)), "veredicto": v(5), "resumen": v(6)[:300]})
+
+    h["laboral"] = {"tareas": tareas, "dias": dias, "semanas": semanas}
+    print(f"Planificación laboral: {len(tareas)} tareas, {len(dias)} días especiales, {len(semanas)} semanas")

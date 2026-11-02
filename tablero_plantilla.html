@@ -140,6 +140,28 @@ th{color:var(--tinta2);font-weight:600;position:sticky;top:0;background:var(--su
 .sesion details{margin-top:4px}
 .sesion pre{white-space:pre-wrap;font:inherit;font-size:12.5px;color:var(--tinta2);margin:6px 0 0}
 td a{color:inherit}
+.nav-semana{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:12px}
+.nav-semana .rango-sem{font-weight:650;font-size:16px;margin-right:auto}
+.nav-semana button{font:inherit;font-size:13px;border:1px solid var(--borde);background:var(--superficie);color:var(--tinta);border-radius:8px;padding:6px 10px;cursor:pointer}
+.nav-semana button[aria-pressed="true"]{background:var(--tinta);color:var(--superficie)}
+.resumen-sem{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.resumen-sem div{background:var(--superficie);border:1px solid var(--borde);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--tinta2)}
+.resumen-sem b{display:block;font-size:20px;color:var(--tinta);font-weight:650;margin-top:2px}
+.dias-sem{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.dia{background:var(--superficie);border:1px solid var(--borde);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0;font-size:12.5px}
+.dia.hoy{outline:2px solid var(--s1);outline-offset:-1px}
+.dia .cab{display:flex;justify-content:space-between;align-items:baseline;gap:4px}
+.dia .cab b{font-size:14px}
+.dia .eti{display:flex;flex-wrap:wrap;gap:4px}
+.dia .eti span{font-size:11px;font-weight:600;border-radius:999px;padding:2px 7px;background:var(--lavado);color:var(--tinta)}
+.dia h5{margin:0 0 3px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--tenue);font-weight:600}
+.dia .barra-h{height:6px;border-radius:3px;background:var(--lavado);overflow:hidden;margin-top:4px}
+.dia .barra-h i{display:block;height:100%;border-radius:3px}
+.dia ul{margin:4px 0 0;padding-left:14px;color:var(--tinta2)}
+.dia .ses{border-left:3px solid var(--s2);padding-left:6px;margin-top:3px}
+.dia .ses.hecha{border-left-color:var(--s1)}
+.dia .sug{margin-top:auto;background:var(--lavado);border-radius:8px;padding:7px 8px;color:var(--tinta)}
+@media (max-width:1000px){.dias-sem{grid-template-columns:minmax(0,1fr)}.resumen-sem{grid-template-columns:repeat(2,minmax(0,1fr))}.dia{flex-direction:column}}
 footer{margin-top:28px;font-size:12px;color:var(--tenue)}
 [hidden]{display:none!important}
 
@@ -181,12 +203,13 @@ footer{margin-top:28px;font-size:12px;color:var(--tenue)}
 
   <div class="barra" id="barra">
     <nav class="pestanas" role="tablist">
+      <button role="tab" data-t="semana">Semana</button>
       <button role="tab" data-t="rend">Rendimiento</button>
       <button role="tab" data-t="desc">Descanso</button>
       <button role="tab" data-t="perf">Performance</button>
       <button role="tab" data-t="plan">Plan</button>
     </nav>
-    <div class="periodo">
+    <div class="periodo" id="periodo">
       <span>Periodo de los gráficos</span>
       <div class="seg" id="rango" role="group" aria-label="Periodo de los gráficos">
         <button data-d="30">30 días</button><button data-d="90">90 días</button><button data-d="180">6 meses</button><button data-d="365">1 año</button><button data-d="100000">Todo</button>
@@ -196,6 +219,7 @@ footer{margin-top:28px;font-size:12px;color:var(--tenue)}
   <p class="intro-pestana" id="introPestana"></p>
   <p class="pista-ayuda">Pasa el cursor (o toca) cualquier gráfico para ver el detalle de cada día. Los botones <span class="info" style="cursor:default">?</span> explican qué significa cada dato.</p>
 
+  <section id="p-semana" class="rejilla" hidden></section>
   <section id="p-rend" class="rejilla"></section>
   <section id="p-desc" class="rejilla" hidden></section>
   <section id="p-perf" class="rejilla" hidden></section>
@@ -208,6 +232,23 @@ footer{margin-top:28px;font-size:12px;color:var(--tenue)}
 <script>
 function iniciar(D){
 document.querySelector('.envoltura').hidden=false;
+const EN = D.vista==='entrenador';  // vista del entrenador: tercera persona y planificación primero
+if(EN){document.querySelector('.envoltura h1').textContent='Diego Palacios';document.getElementById('sello').dataset.pre='Vista del entrenador · ';document.title='Diego Palacios · entrenador';
+  document.querySelector('[data-t="desc"]').textContent='Recuperación';document.querySelector('[data-t="perf"]').textContent='Carga y forma';}
+/* Convierte los textos de segunda persona a tercera (solo en la vista del entrenador) */
+const TERCERA=[[/\bPlan de tu entrenador\b/g,'Plan del entrenador'],[/\btu entrenador\b/g,'el entrenador'],[/\bTu entrenador\b/g,'El entrenador'],
+  [/\bDuermes\b/g,'Duerme'],[/\bpasas\b/g,'pasa'],[/\bdespiertas\b/g,'despierta'],[/\brecargas\b/g,'recarga'],[/\bte notas\b/g,'se nota'],[/\bte estás\b/g,'se está'],
+  [/\bhaz\b/g,'hacer'],[/\bIntenta acostarte\b/g,'Conviene acostarse'],[/\brevisa\b/g,'revisar'],[/\balterna\b/g,'alternar'],[/\bMantén\b/g,'Mantener'],[/\bmantén\b/g,'mantener'],
+  [/\bCorriste\b/g,'Corrió'],[/\bLlevas\b/g,'Lleva'],[/\bllevas\b/g,'lleva'],[/\bavanzas\b/g,'avanza'],[/\b[Cc]umpliste\b/g,'cumplió'],[/\bRetoma\b/g,'Retomar'],
+  [/\bSubiste\b/g,'Subió'],[/\bno aumentes\b/g,'no aumentar'],[/\bEstás\b/g,'Está'],[/\bestás\b/g,'está'],[/\bVas\b/g,'Va'],[/\bconservas\b/g,'conserva'],
+  [/\bentrenas\b/g,'entrena'],[/\bempiezas\b/g,'empieza'],[/\bte recuperas\b/g,'se recupera'],[/\bNo subas\b/g,'No subir'],[/\bmete\b/g,'incluir'],
+  [/\bSigue así\b/g,'Mantener así'],[/\bReduce\b/g,'Reducir'],[/\bduerme más\b/g,'dormir más'],[/\bvuelve a subir\b/g,'volver a subir'],[/\bSuma\b/g,'Sumar'],
+  [/\bcuida\b/g,'cuidar'],[/\bPuedes\b/g,'Puede'],[/\bpuedes\b/g,'puede'],[/\bPrioriza\b/g,'Priorizar'],[/\bTe faltan\b/g,'Le faltan'],[/\bDormiste\b/g,'Durmió'],
+  [/\bpara ti\b/g,'para Diego'],[/\bAmaneciste\b/g,'Amaneció'],[/\bamaneces\b/g,'amanece'],[/\bEstuviste\b/g,'Estuvo'],[/\bcorres\b/g,'corre'],[/\bcorriste\b/g,'corrió'],
+  [/\bhiciste\b/g,'hizo'],[/\bentrenaste\b/g,'entrenó'],[/\btienes\b/g,'tiene'],[/\bnecesitas\b/g,'necesita'],[/\bdormiste\b/g,'durmió'],[/\bte recupera\b/g,'le recupera'],
+  [/\bte deja\b/g,'le deja'],[/\bcompárate\b/g,'compáralo'],[/\bte compares\b/g,'lo compares'],[/\bQué hacer\b/g,'Sugerencia para planificar'],
+  [/\bTus\b/g,'Sus'],[/\btus\b/g,'sus'],[/\bTu\b/g,'Su'],[/\btu\b/g,'su'],[/\bTU\b/g,'SU']];
+const aTercera = raiz => {if(!EN||!raiz)return;const w=document.createTreeWalker(raiz,NodeFilter.SHOW_TEXT);let n;while((n=w.nextNode())){let t=n.nodeValue,o=t;TERCERA.forEach(([r,s])=>t=t.replace(r,s));if(t!==o)n.nodeValue=t;}};
 
 /* ---------- utilidades ---------- */
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
@@ -226,8 +267,8 @@ const lunes = s => {const d=new Date(s+'T12:00:00');d.setDate(d.getDate()-(d.get
 const entre = (a,b) => Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/864e5);
 const prom = (arr,k) => {const v=arr.map(x=>typeof k==='function'?k(x):x[k]).filter(x=>x!=null&&!isNaN(x));return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;};
 const suma = (arr,k) => arr.reduce((s,x)=>s+(x[k]||0),0);
-const guardar=(k,v)=>{try{localStorage.setItem('sd_'+k,v)}catch(e){}};
-const leer=(k,def)=>{try{return localStorage.getItem('sd_'+k)??def}catch(e){return def}};
+const guardar=(k,v)=>{try{localStorage.setItem('sd_'+D.vista+'_'+k,v)}catch(e){}};
+const leer=(k,def)=>{try{return localStorage.getItem('sd_'+D.vista+'_'+k)??def}catch(e){return def}};
 const signo = (x,dec=0,u='') => x==null||isNaN(x)?'—':(x>0?'+':x<0?'−':'±')+Math.abs(dec?Math.round(x*10**dec)/10**dec:Math.round(x)).toLocaleString('es')+u;
 
 /* ---------- glosario: qué significa cada dato ---------- */
@@ -258,7 +299,7 @@ const GLOS={
 };
 const ayuda = k => GLOS[k]?`<button class="info" type="button" data-k="${k}" aria-label="Qué significa ${GLOS[k][0]}" aria-expanded="false">?</button>`:'';
 const globo=document.getElementById('globo');let fijo=null;
-function mostrar(btn){const [t,que,leer]=GLOS[btn.dataset.k];globo.innerHTML=`<b>${t}</b>${que}<span class="clave">Cómo leerlo</span>${leer}`;globo.hidden=false;
+function mostrar(btn){const [t,que,leer]=GLOS[btn.dataset.k];globo.innerHTML=`<b>${t}</b>${que}<span class="clave">Cómo leerlo</span>${leer}`;globo.hidden=false;aTercera(globo);
   const r=btn.getBoundingClientRect(),w=globo.offsetWidth,h=globo.offsetHeight;
   let x=Math.min(Math.max(8,r.left+r.width/2-w/2),innerWidth-w-8), y=r.bottom+8; if(y+h>innerHeight-8)y=Math.max(8,r.top-h-8);
   globo.style.left=x+'px';globo.style.top=y+'px';document.querySelectorAll('.info[aria-expanded="true"]').forEach(b=>b.setAttribute('aria-expanded','false'));btn.setAttribute('aria-expanded','true');}
@@ -287,7 +328,7 @@ const chip = (txt,st) => `<span class="chip"><i style="background:var(${ST[st].c
 const PEOR = a => ['critico','serio','aviso','bien'].find(s=>a.includes(s))||'bien';
 
 /* ---------- estado ---------- */
-let rango = +leer('rango',90), pestana = leer('tab','rend');
+let rango = +leer('rango',90), pestana = leer('tab',EN?'semana':'rend');
 const graficos = [];
 const DIAS = D.dias, ACTS = D.actividades;
 const ultimo = DIAS.length?DIAS[DIAS.length-1].f:iso(new Date());
@@ -327,7 +368,7 @@ const etiquetaDia = d => d.semanal?`Semana del ${fCorta(d.f)}`:fLarga(d.f);
 
 /* ---------- cabecera y fichas ---------- */
 const g = new Date(D.generado);
-document.getElementById('sello').textContent = `Actualizado el ${g.getDate()} ${MESES[g.getMonth()]} a las ${String(g.getHours()).padStart(2,'0')}:${String(g.getMinutes()).padStart(2,'0')} · ${ACTS.length} actividades desde ${DIAS.length?fLarga(DIAS[0].f):'—'}`;
+document.getElementById('sello').textContent = (document.getElementById('sello').dataset.pre||'')+`Actualizado el ${g.getDate()} ${MESES[g.getMonth()]} a las ${String(g.getHours()).padStart(2,'0')}:${String(g.getMinutes()).padStart(2,'0')} · ${ACTS.length} actividades desde ${DIAS.length?fLarga(DIAS[0].f):'—'}`;
 
 function fichas(){
   const p=ult('prep'), s=ult('sueno'), h=ult('hrv'), c=ult('carga_aguda');
@@ -673,6 +714,78 @@ function performance(panel){
   }
 }
 
+/* ---- Semana: trabajo + entrenamiento + recuperación, para planificar ---- */
+const LAB = D.laboral||null;
+const hoyLocal = (()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10);})();
+let semanaOffset = 0;
+const DIAS_N=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+function trabajoDia(f){
+  if(!LAB)return null;
+  const esp=(LAB.dias||[]).filter(d=>d.f===f);
+  let h=0,n=0,entregas=0,reuniones=0,tareas=[];
+  if(LAB.tareas){tareas=LAB.tareas.filter(t=>t.f===f);tareas.forEach(t=>{h+=t.h||0;n++;if(/entrega/i.test(t.tipo))entregas++;if(/reuni/i.test(t.tipo))reuniones++;});}
+  else{const r=(LAB.resumen_dias||[]).find(d=>d.f===f);if(r){h=r.h;n=r.n;entregas=r.entregas;reuniones=r.reuniones;}}
+  const etiquetas=[];
+  esp.forEach(d=>{const det=(d.det||'').trim();if(d.tipo==='Feriado')etiquetas.push('Feriado');else if(d.tipo==='Libre')etiquetas.push('Día libre');else if(/turno/i.test(det))etiquetas.push('Turno de redes');else if(d.tipo==='Hito'&&det)etiquetas.push(det);else if(det)etiquetas.push(det);});
+  if(entregas)etiquetas.push(entregas>1?`${entregas} entregas`:'Entrega');
+  const libre=esp.some(d=>d.tipo==='Feriado'||d.tipo==='Libre');
+  const turno=esp.some(d=>/turno/i.test(d.det||''));
+  return {h,n,entregas,reuniones,tareas,etiquetas:[...new Set(etiquetas)],libre,turno};
+}
+function sugerencia(f,tr){
+  const finde=[5,6].includes((new Date(f+'T12:00:00').getDay()+6)%7);
+  if(!tr)return finde?'Fin de semana: buen hueco para la sesión larga.':'';
+  if(tr.libre&&!tr.h)return 'Día libre: ideal para la sesión larga o la de calidad.';
+  if(tr.turno)return 'Turno de redes: mejor una sesión corta o flexible de horario.';
+  if(tr.h>=7||tr.entregas)return 'Día cargado de trabajo: mejor suave o descanso.';
+  if(tr.h>=4)return 'Jornada normal: sesión de intensidad media o rodaje.';
+  if(finde)return 'Fin de semana sin trabajo: buen hueco para la sesión larga.';
+  return 'Poca carga laboral: buen día para una sesión de calidad.';
+}
+function semanaPanel(panel){
+  const lunesBase=sumarDias(lunes(hoyLocal),semanaOffset*7), dias=[...Array(7)].map((_,i)=>sumarDias(lunesBase,i));
+  const capa=LAB&&(LAB.semanas||[]).find(s=>s.f===lunesBase);
+  const plan=(D.plan||[]).filter(p=>p.tipo!=='Descanso');
+  const acts=ACTS.filter(a=>a.f>=dias[0]&&a.f<=dias[6]&&grupo(a.tipo)!=='Caminata');
+  const planSem=plan.filter(p=>p.f>=dias[0]&&p.f<=dias[6]);
+  const km=acts.filter(a=>esCarrera(a.tipo)).reduce((s,a)=>s+(a.km||0),0);
+  const tssSem=acts.reduce((s,a)=>s+tss(a),0);
+  const horasTrab=dias.reduce((s,f)=>s+((trabajoDia(f)||{}).h||0),0);
+  const etiqSem=semanaOffset===0?'Esta semana':semanaOffset===1?'Próxima semana':semanaOffset===-1?'Semana pasada':(semanaOffset>0?`En ${semanaOffset} semanas`:`Hace ${-semanaOffset} semanas`);
+
+  const cont=document.createElement('div');cont.className='tarjeta ancha';cont.style.background='transparent';cont.style.border='0';cont.style.padding='0';
+  cont.innerHTML=`<div class="nav-semana"><span class="rango-sem">${etiqSem}: ${fCorta(dias[0])} – ${fCorta(dias[6])}</span>
+    <button data-o="-1" type="button">◀ Anterior</button><button data-o="0" type="button" aria-pressed="${semanaOffset===0}">Hoy</button><button data-o="1" type="button">Siguiente ▶</button></div>
+    <div class="resumen-sem">
+      <div>Trabajo${capa?` (${capa.habiles??'?'} días hábiles)`:''}<b>${capa&&capa.carga!=null?n0(capa.carga)+' %':horasTrab?n0(horasTrab)+' h':'—'}</b>${capa?`${capa.veredicto||''}${capa.comp!=null?` · ${n0(capa.comp)} h de ${n0(capa.disp)} h`:''}`:LAB?'horas comprometidas':'Sin hoja de trabajo conectada'}</div>
+      <div>Sesiones planificadas<b>${planSem.length}</b>${planSem.length?planSem.map(p=>p.km?n1(p.km)+' km':p.min?hm(p.min/60):'').filter(Boolean).join(' · '):'TrainingPeaks / Garmin'}</div>
+      <div>Hecho en la semana<b>${n1(km)} km</b>${acts.length} ${acts.length===1?'sesión':'sesiones'} · ${n0(tssSem)} TSS</div>
+      <div>Balance hoy${ayuda('pmc')}<b>${PMC[ultimo]?signo(PMC[ultimo].tsb):'—'}</b>${PMC[ultimo]?zonaTSB(PMC[ultimo].tsb)[0]:''}</div>
+    </div>
+    ${capa&&capa.resumen?`<p class="lectura">${capa.resumen.replace(/</g,'&lt;')}</p>`:''}
+    <div class="dias-sem"></div>`;
+  const grid=cont.querySelector('.dias-sem');
+  dias.forEach((f,i)=>{
+    const tr=trabajoDia(f), dD=DIAS.find(d=>d.f===f), pls=plan.filter(p=>p.f===f), ac=acts.filter(a=>a.f===f);
+    const pasado=f<hoyLocal, esHoy=f===hoyLocal;
+    const nivel=tr?(tr.h>=7?['Alta','--critico']:tr.h>=4?['Media','--aviso']:tr.h>0?['Baja','--bien']:null):null;
+    const el=document.createElement('div');el.className='dia'+(esHoy?' hoy':'');
+    el.innerHTML=`<div class="cab"><b>${DIAS_N[i]} ${+f.slice(8)}</b><span style="color:var(--tenue)">${esHoy?'hoy':''}</span></div>
+      ${tr&&tr.etiquetas.length?`<div class="eti">${tr.etiquetas.map(e=>`<span>${e.replace(/</g,'&lt;')}</span>`).join('')}</div>`:''}
+      <div><h5>Trabajo</h5>${tr?(tr.h?`${n1(tr.h)} h · carga ${nivel[0].toLowerCase()}${tr.reuniones?` · ${tr.reuniones} reunión${tr.reuniones>1?'es':''}`:''}<div class="barra-h"><i style="width:${Math.min(100,tr.h/10*100)}%;background:var(${nivel[1]})"></i></div>`:(tr.libre?'Sin trabajo':'Sin tareas registradas'))
+        +(tr.tareas&&tr.tareas.length?`<ul>${tr.tareas.slice(0,4).map(t=>`<li>${t.tarea.replace(/</g,'&lt;')}${t.h?` (${n1(t.h)} h)`:''}</li>`).join('')}${tr.tareas.length>4?`<li>y ${tr.tareas.length-4} más</li>`:''}</ul>`:''):'<span style="color:var(--tenue)">—</span>'}</div>
+      <div><h5>Entrenamiento</h5>${pls.map(p=>`<div class="ses"><b>${(p.t&&p.t!=='Running'?p.t:p.tipo).replace(/</g,'&lt;')}</b>${[p.km?n1(p.km)+' km':'',p.min?hm(p.min/60):''].filter(Boolean).map(x=>' · '+x).join('')}<div style="color:var(--tinta2)">Planificado</div></div>`).join('')}
+        ${ac.map(a=>`<div class="ses hecha"><b>${TIPO[a.tipo]||a.tipo}</b>${a.km?' · '+n1(a.km)+' km':''} · ${hm(a.min/60)}<div style="color:var(--tinta2)">Hecho${a.ritmo?` · ${ritmo(a.ritmo)}/km`:''}${tss(a)?` · ${tss(a)} TSS`:''}</div></div>`).join('')}
+        ${!pls.length&&!ac.length?`<span style="color:var(--tenue)">${pasado?'Descanso':'Sin sesión planificada'}</span>`:''}</div>
+      ${dD&&(pasado||esHoy)?`<div><h5>Recuperación</h5>${dD.sueno!=null?`Sueño ${dD.sueno}/100 (${hm(dD.sueno_h)})`:''}${dD.prep!=null?`<br>Preparación ${dD.prep}/100`:''}${dD.hrv?`<br>VFC ${dD.hrv} ms`:''}</div>`:''}
+      ${!pasado&&!(esHoy&&ac.length)?`<div class="sug">${sugerencia(f,tr)}</div>`:''}`;
+    grid.appendChild(el);
+  });
+  cont.querySelectorAll('.nav-semana button').forEach(b=>b.addEventListener('click',()=>{const o=+b.dataset.o;semanaOffset=o===0?0:semanaOffset+o;render();}));
+  panel.appendChild(cont);
+  if(!LAB){const n=document.createElement('p');n.className='exp';n.textContent='Conecta la hoja de planificación laboral para ver aquí tu carga de trabajo de cada día.';panel.appendChild(n);}
+}
+
 /* ---- Plan (TrainingPeaks) ---- */
 const grupoPlan = t => ({Carrera:'Carrera',Fuerza:'Fuerza',Caminata:'Caminata'})[t]||'Otros';
 function cruzarPlan(){
@@ -763,8 +876,8 @@ function stravaPanel(panel){
 }
 
 /* ---------- render ---------- */
-const paneles={rend:p=>{rendimiento(p);stravaPanel(p);},desc:descanso,perf:performance,plan:planPanel};
-const INTRO={rend:'Rendimiento: cuánto entrenas y cómo responde tu cuerpo al correr.',desc:'Descanso: cómo duermes y cuánto te recuperas día a día.',perf:'Performance: el equilibrio entre la carga que haces y lo preparado que estás para asumirla.',plan:'Plan: lo que tu entrenador programó en TrainingPeaks frente a lo que hiciste.'};
+const paneles={semana:semanaPanel,rend:p=>{rendimiento(p);stravaPanel(p);},desc:descanso,perf:performance,plan:planPanel};
+const INTRO={rend:'Rendimiento: cuánto entrenas y cómo responde tu cuerpo al correr.',desc:'Descanso: cómo duermes y cuánto te recuperas día a día.',perf:'Performance: el equilibrio entre la carga que haces y lo preparado que estás para asumirla.',plan:'Plan: lo que tu entrenador programó en TrainingPeaks frente a lo que hiciste.',semana:'Semana: trabajo, entrenamiento y recuperación día a día, para planificar juntos.'};
 function render(){
   ocultar();
   graficos.splice(0).forEach(c=>c.destroy());
@@ -778,6 +891,8 @@ function render(){
   const alto=Math.max(...Object.keys(paneles).map(k=>document.getElementById('p-'+k).offsetHeight));
   Object.keys(paneles).forEach(k=>{const p=document.getElementById('p-'+k);p.style.minHeight=alto+'px';p.hidden=k!==pestana;p.innerHTML='';});
   paneles[pestana](document.getElementById('p-'+pestana));
+  document.getElementById('periodo').hidden=pestana==='semana';
+  aTercera(document.querySelector('.envoltura'));
   requestAnimationFrame(()=>Object.keys(paneles).forEach(k=>document.getElementById('p-'+k).style.minHeight=''));
 }
 // Tras cambiar pestaña o periodo, si bajaste mucho, vuelve al inicio de los gráficos
@@ -802,6 +917,7 @@ render();
   const PLANO=/*__DATOS__*/null, CIF=/*__CIFRADO__*/null;
   if(PLANO)return iniciar(PLANO);
   const candado=document.getElementById('candado');
+  if(/\/entrenador/.test(location.pathname)){candado.querySelector('h1').textContent='Diego Palacios · vista del entrenador';candado.querySelector('.sub').textContent='Datos de entrenamiento, recuperación y disponibilidad para planificar. Escribe la contraseña que te compartió Diego.';}
   if(!CIF){candado.hidden=false;candado.querySelector('form').innerHTML='<p>Sin datos todavía.</p>';return;}
   const b=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
   async function abrir(pw){

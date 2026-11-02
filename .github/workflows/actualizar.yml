@@ -43,6 +43,7 @@ jobs:
         env:
           DATOS_KEY: ${{ secrets.DATOS_KEY }}
           TABLERO_CLAVE: ${{ secrets.TABLERO_CLAVE }}
+          ENTRENADOR_CLAVE: ${{ secrets.ENTRENADOR_CLAVE }}
         run: python nube.py actualizar publicado/datos.enc salida
 
       - name: Guardar datos cifrados (rama publicado, sin historial)

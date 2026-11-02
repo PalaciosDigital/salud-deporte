@@ -28,7 +28,12 @@ def publicar(h: dict, salida: Path, llave: bytes, clave: str):
     web = salida / "web"
     web.mkdir(parents=True, exist_ok=True)
     (salida / "datos.enc").write_bytes(cifrar_objeto(h, llave))
-    (web / "index.html").write_text(renderizar(paquete(h["dias"], h["actividades"], h.get("predicciones"), **{k: h.get(k) for k in EXTRAS}), clave))
+    datos = paquete(h["dias"], h["actividades"], h.get("predicciones"), **{k: h.get(k) for k in EXTRAS})
+    (web / "index.html").write_text(renderizar(datos, clave, "atleta"))
+    clave_ent = os.environ.get("ENTRENADOR_CLAVE")
+    if clave_ent:  # vista del entrenador, con su propia contraseña
+        (web / "entrenador").mkdir(exist_ok=True)
+        (web / "entrenador" / "index.html").write_text(renderizar(datos, clave_ent, "entrenador"))
     (web / ".nojekyll").write_text("")
     (web / "robots.txt").write_text("User-agent: *\nDisallow: /\n")
 
@@ -72,8 +77,8 @@ def actualizar(entrada: Path, salida: Path):
         print("Umbral de lactato no disponible:", e.__class__.__name__)
 
     # Fuentes extra: si fallan, el tablero se publica igual con lo de Garmin
-    from fuentes import actualizar_plan, actualizar_plan_garmin, actualizar_strava
-    for nombre, fn in (("Plan (Garmin)", lambda h_: actualizar_plan_garmin(g, h_)),
+    from fuentes import actualizar_laboral, actualizar_plan, actualizar_plan_garmin, actualizar_strava
+    for nombre, fn in (("Plan (Garmin)", lambda h_: actualizar_plan_garmin(g, h_)), ("Planificación laboral", actualizar_laboral),
                        ("Strava", actualizar_strava), ("TrainingPeaks", actualizar_plan)):
         try:
             fn(h)
@@ -115,6 +120,10 @@ def agregar(archivo: Path):
     if s.exists():
         h["strava_sesion"] = json.loads(s.read_text())
         cambios.append("Strava")
+    hl = carpeta / "hoja_laboral"
+    if hl.exists() and hl.read_text().strip():
+        h["hoja_laboral"] = hl.read_text().strip()
+        cambios.append("hoja laboral")
     t = carpeta / "tp_ical_url"
     if t.exists() and t.read_text().strip().startswith(("http", "webcal")):
         h["tp_ical"] = t.read_text().strip()
