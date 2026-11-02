@@ -251,7 +251,7 @@ const GLOS={
   sueno_prep:['Sueño frente a preparación','Cada punto es un día: el puntaje de sueño de esa noche y la preparación con la que amaneciste.','Si los puntos suben hacia la derecha, dormir bien es lo que más te recupera.'],
   tss:['TSS (puntos de estrés de entrenamiento)','Cuánto te cargó cada sesión, sumando duración e intensidad. Una hora justo en tu umbral = 100 TSS. Lo usa TrainingPeaks.','Aquí se estima con tu potencia normalizada frente a tu potencia de umbral (si la hay) o con tu pulso medio frente a tu FC de umbral. Puede diferir algo del valor de TrainingPeaks.'],
   pmc:['Forma, fatiga y balance','Forma (CTL): tu nivel de entrenamiento acumulado, media de TSS de unas 6 semanas. Fatiga (ATL): lo cargado en la última semana. Balance (TSB): forma menos fatiga; dice qué tan fresco estás.','Balance sobre +5: fresco, bueno para competir · entre −10 y +5: neutro · entre −30 y −10: cargando, la zona donde se mejora · bajo −30: sobrecarga. Subir la forma más de 5–8 puntos por semana aumenta el riesgo de lesión.'],
-  plan:['Plan de TrainingPeaks','Las sesiones que tu entrenador te programó en TrainingPeaks, comparadas con lo que registró tu reloj ese día.','Hecho: entrenaste ese día y duró al menos el 80 % de lo planificado · Parcial: entrenaste menos del 80 % · No hecho: no hay actividad ese día.'],
+  plan:['Plan de TrainingPeaks','Las sesiones que tu entrenador te programó en TrainingPeaks (TrainingPeaks las envía a tu calendario de Garmin), comparadas con lo que registró tu reloj.','Hecho: entrenaste ese día y cubriste al menos el 80 % de la duración o distancia planificada · Parcial: menos del 80 % · Movida: la hiciste un día antes o después · No hecho: no hay entrenamiento ese día ni el anterior o siguiente.'],
   marcas:['Mejores marcas (Strava)','Tus mejores tiempos en cada distancia, sacados de cualquier tramo de tus carreras (no hace falta que fuera una competencia).','Si la marca del periodo está cerca de la histórica, estás en tu mejor momento.'],
   segmentos:['Segmentos (Strava)','Tramos fijos de calle o montaña que Strava mide cada vez que pasas por ellos. Sirven para compararte contigo mismo en el mismo terreno.','Si tu último intento se acerca a tu mejor tiempo, vas en buena forma; si se aleja, puede ser cansancio o que fuiste suave.'],
   efic:['Eficiencia aeróbica','Metros que avanzas por cada latido del corazón cuando corres (velocidad ÷ pulso medio).','Si sube, tu corazón trabaja menos para ir igual de rápido: estás más en forma.']
@@ -677,13 +677,14 @@ function performance(panel){
 const grupoPlan = t => ({Carrera:'Carrera',Fuerza:'Fuerza',Caminata:'Caminata'})[t]||'Otros';
 function cruzarPlan(){
   const P=(D.plan||[]).filter(p=>p.tipo!=='Descanso'), usados=new Set();
-  return P.map(p=>{
-    const delDia=ACTS.filter(a=>a.f===p.f&&!usados.has(a.id));
-    const m=delDia.find(a=>grupo(a.tipo)===grupoPlan(p.tipo))||delDia.find(a=>grupo(a.tipo)!=='Caminata')||null;
-    if(m)usados.add(m.id);
+  // Primero el mismo día; si no, un día antes o después (sesión movida). Mismo deporte primero.
+  const buscar=(f,p)=>{const c=ACTS.filter(a=>a.f===f&&!usados.has(a.id)&&grupo(a.tipo)!=='Caminata');return c.find(a=>grupo(a.tipo)===grupoPlan(p.tipo))||(f===p.f?c[0]:null)||null;};
+  const conAct=P.map(p=>{const m=buscar(p.f,p);if(m)usados.add(m.id);return {p,m,movida:false};});
+  conAct.forEach(x=>{if(x.m||x.p.f>ultimo)return;for(const d of [-1,1]){const m=buscar(sumarDias(x.p.f,d),x.p);if(m){usados.add(m.id);x.m=m;x.movida=true;break;}}});
+  return conAct.map(({p,m,movida})=>{
     let est;
-    if(p.f>ultimo)est=['Próxima','neutro'];
-    else if(m){const r=p.min?m.min/p.min:1;est=r>=0.8?['Hecho','bien']:['Parcial','aviso'];}
+    if(p.f>ultimo&&!m)est=['Próxima','neutro'];
+    else if(m){const r=p.min&&m.min?m.min/p.min:p.km&&m.km?m.km/p.km:1;est=r>=0.8?[movida?'Hecho (movida)':'Hecho','bien']:[movida?'Parcial (movida)':'Parcial','aviso'];}
     else if(p.f===ultimo)est=['Pendiente hoy','neutro'];
     else est=['No hecho','serio'];
     return {...p,act:m,est};});
@@ -696,7 +697,7 @@ function planPanel(panel){
 
   // Próximos 7 días
   const el=document.createElement('article');el.className='tarjeta';
-  el.innerHTML=`<h3>Próximos 7 días${ayuda('plan')}</h3><p class="exp">Lo que tu entrenador programó en TrainingPeaks.</p><div class="sesiones">${prox.length?prox.map(c=>`<div class="sesion"><div class="cab"><b>${fCorta(c.f)} · ${c.t||c.tipo}</b>${chip(c.est[0],c.est[1])}</div><div class="meta">${[c.tipo,c.min?hm(c.min/60):'',c.km?n1(c.km)+' km':'',c.tss?c.tss+' TSS':''].filter(Boolean).join(' · ')}</div>${c.d?`<details><summary>Ver detalle</summary><pre>${c.d.replace(/</g,'&lt;')}</pre></details>`:''}</div>`).join(''):'<div class="vacio">No hay sesiones programadas en los próximos 7 días.</div>'}</div>`;
+  el.innerHTML=`<h3>Próximos 7 días${ayuda('plan')}</h3><p class="exp">Lo que tu entrenador programó en TrainingPeaks (llega a través de tu calendario de Garmin).</p><div class="sesiones">${prox.length?prox.map(c=>`<div class="sesion"><div class="cab"><b>${fCorta(c.f)} · ${c.t||c.tipo}</b>${chip(c.est[0],c.est[1])}</div><div class="meta">${[c.tipo,c.min?hm(c.min/60):'',c.km?n1(c.km)+' km':'',c.tss?c.tss+' TSS':''].filter(Boolean).join(' · ')}</div>${c.d?`<details><summary>Ver detalle</summary><pre>${c.d.replace(/</g,'&lt;')}</pre></details>`:''}</div>`).join(''):'<div class="vacio">No hay sesiones programadas para los próximos días. TrainingPeaks las envía a Garmin cuando tu entrenador las programa (normalmente con pocos días de anticipación).</div>'}</div>`;
   panel.appendChild(el);
 
   // Cumplimiento semanal
