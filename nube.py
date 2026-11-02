@@ -72,8 +72,9 @@ def actualizar(entrada: Path, salida: Path):
         print("Umbral de lactato no disponible:", e.__class__.__name__)
 
     # Fuentes extra: si fallan, el tablero se publica igual con lo de Garmin
-    from fuentes import actualizar_plan, actualizar_strava
-    for nombre, fn in (("Strava", actualizar_strava), ("TrainingPeaks", actualizar_plan)):
+    from fuentes import actualizar_plan, actualizar_plan_garmin, actualizar_strava
+    for nombre, fn in (("Plan (Garmin)", lambda h_: actualizar_plan_garmin(g, h_)),
+                       ("Strava", actualizar_strava), ("TrainingPeaks", actualizar_plan)):
         try:
             fn(h)
         except Exception as e:

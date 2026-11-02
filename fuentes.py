@@ -179,3 +179,99 @@ def actualizar_plan(h):
                      "tss": _tss(texto), "tipo": _tipo(texto)}
     h["plan"] = sorted(plan.values(), key=lambda p: (p["f"], p["t"]))
     print(f"TrainingPeaks: {len(h['plan'])} sesiones en el calendario")
+
+
+# ---------------------------------------------------------------- Plan desde el calendario de Garmin
+# TrainingPeaks envía a Garmin Connect los entrenamientos que programa tu entrenador;
+# los leemos del calendario de Garmin con la misma sesión que ya usa el tablero.
+DEPORTE = {"running": "Carrera", "trail_running": "Carrera", "treadmill_running": "Carrera", "track_running": "Carrera",
+           "strength_training": "Fuerza", "cycling": "Ciclismo", "road_biking": "Ciclismo", "indoor_cycling": "Ciclismo",
+           "swimming": "Natación", "lap_swimming": "Natación", "walking": "Caminata", "hiking": "Caminata",
+           "cardio_training": "Otro", "yoga": "Otro", "other": "Otro"}
+TIPO_PASO = {"warmup": "Calentamiento", "cooldown": "Vuelta a la calma", "interval": "Trabajo", "recovery": "Recuperación",
+             "rest": "Descanso", "active": "Trabajo", "other": "Paso", "main": "Trabajo"}
+
+
+def _ritmo_txt(v):
+    if not v:
+        return ""
+    s = 1000 / v
+    return f"{int(s // 60)}:{int(round(s % 60)):02d}"
+
+
+def _paso(p):
+    """Describe un paso de entrenamiento estructurado en una línea."""
+    if p.get("type") == "RepeatGroupDTO" or p.get("numberOfIterations"):
+        dentro = " + ".join(_paso(x) for x in p.get("workoutSteps") or [])
+        return f"{p.get('numberOfIterations') or '?'}× ({dentro})"
+    nombre = TIPO_PASO.get(((p.get("stepType") or {}).get("stepTypeKey") or "").lower(), "Paso")
+    cond = ((p.get("endCondition") or {}).get("conditionTypeKey") or "").lower()
+    val = p.get("endConditionValue")
+    dur = ""
+    if cond == "time" and val:
+        dur = f"{int(val // 60)} min" + (f" {int(val % 60)} s" if val % 60 else "")
+    elif cond == "distance" and val:
+        dur = f"{val / 1000:g} km" if val >= 1000 else f"{int(val)} m"
+    elif cond == "lap.button":
+        dur = "hasta pulsar vuelta"
+    obj = ""
+    tt = ((p.get("targetType") or {}).get("workoutTargetTypeKey") or "").lower()
+    a, b = p.get("targetValueOne"), p.get("targetValueTwo")
+    if tt == "pace.zone" and a and b:
+        obj = f" a {_ritmo_txt(max(a, b))}–{_ritmo_txt(min(a, b))} /km"
+    elif tt == "heart.rate.zone" and a and b:
+        obj = f" a {int(min(a, b))}–{int(max(a, b))} ppm"
+    elif tt == "heart.rate.zone" and p.get("zoneNumber"):
+        obj = f" en zona {p['zoneNumber']} de pulso"
+    elif tt == "power.zone" and a and b:
+        obj = f" a {int(min(a, b))}–{int(max(a, b))} W"
+    return f"{nombre} {dur}{obj}".strip()
+
+
+def _resumen_workout(w):
+    pasos = []
+    for seg in w.get("workoutSegments") or []:
+        pasos += [_paso(p) for p in seg.get("workoutSteps") or []]
+    desc = (w.get("description") or "").strip()
+    return "\n".join([desc] + pasos if desc else pasos)[:600]
+
+
+def actualizar_plan_garmin(g, h):
+    hoy = date.today()
+    meses = sorted({((hoy.year * 12 + hoy.month - 1 + d) // 12, (hoy.month - 1 + d) % 12 + 1) for d in range(-4, 2)})
+    items, claves = [], set()
+    for y, m in meses:
+        r = g.get_scheduled_workouts(y, m) or {}
+        lote = r.get("calendarItems") if isinstance(r, dict) else r
+        for it in lote or []:
+            claves.update(it.keys())
+            if (it.get("itemType") or "").lower() == "workout":
+                items.append(it)
+    detalle_hasta = (hoy + timedelta(days=8)).isoformat()
+    cache = h.setdefault("plan_cache", {})  # descripción de entrenamientos ya leídos
+    plan, de_tp = [], 0
+    for it in items:
+        f = (it.get("date") or "")[:10]
+        if not f:
+            continue
+        wid = str(it.get("workoutId") or it.get("id") or "")
+        texto = cache.get(wid)
+        if texto is None and wid and f >= hoy.isoformat() and f <= detalle_hasta:
+            try:
+                texto = cache[wid] = _resumen_workout(g.get_workout_by_id(wid))
+            except Exception:
+                texto = ""
+        seg = it.get("duration") or it.get("estimatedDurationInSecs")
+        dist = it.get("distance") or it.get("estimatedDistanceInMeters")
+        origen = " ".join(str(it.get(k) or "") for k in ("providerName", "workoutSource", "atpPlanName")).lower()
+        if "trainingpeaks" in origen or "training peaks" in origen:
+            de_tp += 1
+        plan.append({"f": f, "t": (it.get("title") or "")[:120], "d": texto or "",
+                     "min": round(seg / 60) if isinstance(seg, (int, float)) and seg > 0 else None,
+                     "km": round(dist / 1000, 1) if isinstance(dist, (int, float)) and dist > 0 else None,
+                     "tss": None, "tipo": DEPORTE.get((it.get("sportTypeKey") or "").lower(), "Otro")})
+    # Solo conteos en el registro: el registro de GitHub Actions es público
+    print(f"Plan (calendario de Garmin): {len(plan)} entrenamientos programados en {len(meses)} meses"
+          f"{f', {de_tp} marcados como de TrainingPeaks' if de_tp else ''}. Campos: {sorted(claves)[:40]}")
+    if not h.get("tp_ical"):
+        h["plan"] = sorted(plan, key=lambda p: (p["f"], p["t"]))
