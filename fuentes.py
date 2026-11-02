@@ -247,31 +247,37 @@ def actualizar_plan_garmin(g, h):
             claves.update(it.keys())
             if (it.get("itemType") or "").lower() == "workout":
                 items.append(it)
-    detalle_hasta = (hoy + timedelta(days=8)).isoformat()
     cache = h.setdefault("plan_cache", {})  # descripción de entrenamientos ya leídos
-    plan, de_tp = [], 0
+    plan, vistos, proveedores = [], set(), {}
     for it in items:
         f = (it.get("date") or "")[:10]
         if not f:
             continue
         wid = str(it.get("workoutId") or it.get("id") or "")
-        texto = cache.get(wid)
-        if texto is None and wid and f >= hoy.isoformat() and f <= detalle_hasta:
+        info = cache.get(wid)
+        if info is None and wid:
             try:
-                texto = cache[wid] = _resumen_workout(g.get_workout_by_id(wid))
+                w = g.get_workout_by_id(wid)
+                info = cache[wid] = {"d": _resumen_workout(w), "seg": w.get("estimatedDurationInSecs"),
+                                     "dist": w.get("estimatedDistanceInMeters"),
+                                     "prov": str(w.get("workoutProvider") or w.get("workoutSourceId") or w.get("author", {}).get("displayName") and "autor" or "")[:40]}
             except Exception:
-                texto = ""
-        seg = it.get("duration") or it.get("estimatedDurationInSecs")
-        dist = it.get("distance") or it.get("estimatedDistanceInMeters")
-        origen = " ".join(str(it.get(k) or "") for k in ("providerName", "workoutSource", "atpPlanName")).lower()
-        if "trainingpeaks" in origen or "training peaks" in origen:
-            de_tp += 1
+                info = {}
+        info = info or {}
+        clave = (f, wid)
+        if clave in vistos:
+            continue
+        vistos.add(clave)
+        texto = info.get("d", "")
+        proveedores[info.get("prov") or "desconocido"] = proveedores.get(info.get("prov") or "desconocido", 0) + 1
+        seg = it.get("duration") or info.get("seg")
+        dist = it.get("distance") or info.get("dist")
         plan.append({"f": f, "t": (it.get("title") or "")[:120], "d": texto or "",
                      "min": round(seg / 60) if isinstance(seg, (int, float)) and seg > 0 else None,
                      "km": round(dist / 1000, 1) if isinstance(dist, (int, float)) and dist > 0 else None,
                      "tss": None, "tipo": DEPORTE.get((it.get("sportTypeKey") or "").lower(), "Otro")})
     # Solo conteos en el registro: el registro de GitHub Actions es público
-    print(f"Plan (calendario de Garmin): {len(plan)} entrenamientos programados en {len(meses)} meses"
-          f"{f', {de_tp} marcados como de TrainingPeaks' if de_tp else ''}. Campos: {sorted(claves)[:40]}")
+    futuros = sum(1 for p in plan if p["f"] >= hoy.isoformat())
+    print(f"Plan (calendario de Garmin): {len(plan)} entrenamientos ({futuros} desde hoy). Origen: {proveedores}")
     if not h.get("tp_ical"):
         h["plan"] = sorted(plan, key=lambda p: (p["f"], p["t"]))
