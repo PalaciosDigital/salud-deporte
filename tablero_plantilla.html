@@ -178,8 +178,9 @@ footer{margin-top:28px;font-size:12px;color:var(--tenue)}
 /* ===== Estándar tipográfico PRIMICIAS (00_01_ESTANDARIZACION_TIPOGRAFICO.md) =====
    Texto base 20px/1.6 en desktop y móvil; H1 48/40, H2 36/30, H3 27/25, entradilla 24/23, epígrafes 16/15.
    En un tablero, tablas, ejes, leyendas y etiquetas de dato usan el tamaño de epígrafe. */
-:root{--t-h1:48px;--lh-h1:1.1;--t-h2:36px;--t-h3:27px;--t-lead:24px;--lh-lead:1.4;--t-base:20px;--t-epi:16px}
-@media (max-width:767px){:root{--t-h1:40px;--lh-h1:1.15;--t-h2:30px;--t-h3:25px;--t-lead:23px;--lh-lead:1.5;--t-epi:15px}}
+/* Excepción solo de este tablero (pedido del usuario 2026-11-02): toda la escala 2 px por debajo del estándar. */
+:root{--t-h1:46px;--lh-h1:1.1;--t-h2:34px;--t-h3:25px;--t-lead:22px;--lh-lead:1.4;--t-base:18px;--t-epi:14px}
+@media (max-width:767px){:root{--t-h1:38px;--lh-h1:1.15;--t-h2:28px;--t-h3:23px;--t-lead:21px;--lh-lead:1.5;--t-epi:13px}}
 body{font-size:var(--t-base);line-height:1.6}
 h1,#candado h1{font-size:var(--t-h1);line-height:var(--lh-h1);font-weight:700;letter-spacing:-.015em}
 .veredicto .titular{font-size:var(--t-h2);line-height:1.2;font-weight:600}
@@ -198,7 +199,7 @@ h1,#candado h1{font-size:var(--t-h1);line-height:var(--lh-h1);font-weight:700;le
 .dia .cab b{font-size:var(--t-base)}
 .dia h5,.dia .eti span{font-size:var(--t-epi)}
 .dia h5{text-transform:none;letter-spacing:0}
-.info{width:22px;height:22px;font-size:13px}
+.info{width:20px;height:20px;font-size:11px}
 .lienzo{height:280px}
 @media (max-width:767px){.lienzo{height:240px}}
 @media (min-width:1001px){.dias-sem{grid-template-columns:repeat(7,minmax(0,1fr))}.dia{padding:12px 10px}}
@@ -323,6 +324,9 @@ const GLOS={
   plan:['Plan de TrainingPeaks','Las sesiones que tu entrenador te programó en TrainingPeaks (TrainingPeaks las envía a tu calendario de Garmin), comparadas con lo que registró tu reloj.','Hecho: entrenaste ese día y cubriste al menos el 80 % de la duración o distancia planificada · Parcial: menos del 80 % · Movida: la hiciste un día antes o después · No hecho: no hay entrenamiento ese día ni el anterior o siguiente.'],
   marcas:['Mejores marcas (Strava)','Tus mejores tiempos en cada distancia, sacados de cualquier tramo de tus carreras (no hace falta que fuera una competencia).','Si la marca del periodo está cerca de la histórica, estás en tu mejor momento.'],
   segmentos:['Segmentos (Strava)','Tramos fijos de calle o montaña que Strava mide cada vez que pasas por ellos. Sirven para compararte contigo mismo en el mismo terreno.','Si tu último intento se acerca a tu mejor tiempo, vas en buena forma; si se aleja, puede ser cansancio o que fuiste suave.'],
+  actividades:['Actividades','Todas las sesiones que registró el reloj en el periodo elegido, de la más reciente a la más antigua.','TSS: estrés de la sesión (estilo TrainingPeaks) · Carga Garmin: el mismo concepto medido por Garmin · Efecto: qué trabajó la sesión (base aeróbica, tempo, umbral, VO2máx…).'],
+  sesiones:['Sesión por sesión','Cada sesión que programó el entrenador, al lado de lo que realmente se hizo ese día.','Plan: lo programado (duración, distancia, TSS) · Real: lo que registró el reloj · Estado: Hecho, Parcial, Movida (un día antes o después) o No hecho.'],
+  semana:['Semana','Un día por columna con el trabajo, el entrenamiento planificado y hecho, la recuperación y una sugerencia para planificar.','Barra de trabajo: verde = carga baja (menos de 4 h), amarillo = media (4–7 h), rojo = alta (7 h o más). La sugerencia combina la carga laboral con el tipo de día (libre, feriado, turno de redes, entrega). Arriba: carga laboral de la semana según la hoja de Capacidad.'],
   efic:['Eficiencia aeróbica','Metros que avanzas por cada latido del corazón cuando corres (velocidad ÷ pulso medio).','Si sube, tu corazón trabaja menos para ir igual de rápido: estás más en forma.']
 };
 const ayuda = k => GLOS[k]?`<button class="info" type="button" data-k="${k}" aria-label="Qué significa ${GLOS[k][0]}" aria-expanded="false">?</button>`:'';
@@ -513,13 +517,13 @@ const cruz={id:'cruz',afterDatasetsDraw(c){const a=c.tooltip&&c.tooltip.getActiv
   const x=a[0].element.x,{top,bottom}=c.chartArea,ctx=c.ctx;ctx.save();ctx.strokeStyle=css('--eje');ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,bottom);ctx.stroke();ctx.restore();}};
 function base(){
   Chart.defaults.font.family='system-ui,-apple-system,"Segoe UI",sans-serif';
-  Chart.defaults.font.size=matchMedia('(max-width:767px)').matches?15:16;
+  Chart.defaults.font.size=matchMedia('(max-width:767px)').matches?13:14;
   Chart.defaults.color=css('--tenue');
   Chart.defaults.borderColor=css('--grilla');
   Chart.defaults.animation={duration:250};
   Chart.defaults.maintainAspectRatio=false;
   Chart.defaults.plugins.legend.display=false;
-  Object.assign(Chart.defaults.plugins.tooltip,{enabled:true,backgroundColor:css('--tinta'),titleColor:css('--superficie'),bodyColor:css('--superficie'),footerColor:css('--superficie'),borderWidth:0,padding:12,cornerRadius:10,boxPadding:5,usePointStyle:true,titleFont:{weight:'600',size:17},bodyFont:{size:16},footerFont:{weight:'400',size:15},caretSize:6,displayColors:true});
+  Object.assign(Chart.defaults.plugins.tooltip,{enabled:true,backgroundColor:css('--tinta'),titleColor:css('--superficie'),bodyColor:css('--superficie'),footerColor:css('--superficie'),borderWidth:0,padding:12,cornerRadius:10,boxPadding:5,usePointStyle:true,titleFont:{weight:'600',size:15},bodyFont:{size:14},footerFont:{weight:'400',size:13},caretSize:6,displayColors:true});
   Chart.defaults.elements.line.borderWidth=2;
   Chart.defaults.elements.line.borderCapStyle='round';
   Chart.defaults.elements.line.borderJoinStyle='round';
@@ -617,7 +621,7 @@ function rendimiento(panel){
   }
 
   const el=document.createElement('article');el.className='tarjeta ancha';
-  el.innerHTML=`<h3>Actividades</h3><p class="exp">${A.length} en el periodo, de la más reciente a la más antigua.</p><div class="tabla-scroll" style="max-height:420px">${tablaHTML({cols:['Fecha','Actividad','Tipo','Km','Tiempo','Ritmo','Pulso medio','TSS','Carga Garmin','Efecto'],
+  el.innerHTML=`<h3>Actividades${ayuda('actividades')}</h3><p class="exp">${A.length} en el periodo, de la más reciente a la más antigua.</p><div class="tabla-scroll" style="max-height:420px">${tablaHTML({cols:['Fecha','Actividad','Tipo','Km','Tiempo','Ritmo','Pulso medio','TSS','Carga Garmin','Efecto'],
     filas:A.map(a=>[`${fCorta(a.f)} <span style="color:var(--tenue)">${a.hora}</span>`,`<span style="display:block;text-align:left;max-width:220px;overflow:hidden;text-overflow:ellipsis">${a.nombre||''}</span>`,TIPO[a.tipo]||a.tipo,a.km?a.km.toFixed(2):'',hm(a.min/60),a.ritmo?ritmo(a.ritmo):'',a.fc??'',tss(a)||'',a.carga??'',EFECTO[a.efecto]||''])})}</div>`;
   panel.appendChild(el);
 }
@@ -782,7 +786,7 @@ function semanaPanel(panel){
   const etiqSem=semanaOffset===0?'Esta semana':semanaOffset===1?'Próxima semana':semanaOffset===-1?'Semana pasada':(semanaOffset>0?`En ${semanaOffset} semanas`:`Hace ${-semanaOffset} semanas`);
 
   const cont=document.createElement('div');cont.className='tarjeta ancha';cont.style.background='transparent';cont.style.border='0';cont.style.padding='0';
-  cont.innerHTML=`<div class="nav-semana"><span class="rango-sem">${etiqSem}: ${fCorta(dias[0])} – ${fCorta(dias[6])}</span>
+  cont.innerHTML=`<div class="nav-semana"><span class="rango-sem">${etiqSem}: ${fCorta(dias[0])} – ${fCorta(dias[6])}${ayuda('semana')}</span>
     <button data-o="-1" type="button">◀ Anterior</button><button data-o="0" type="button" aria-pressed="${semanaOffset===0}">Hoy</button><button data-o="1" type="button">Siguiente ▶</button></div>
     <div class="resumen-sem">
       <div>Trabajo${capa?` (${capa.habiles??'?'} días hábiles)`:''}<b>${capa&&capa.carga!=null?n0(capa.carga)+' %':horasTrab?n0(horasTrab)+' h':'—'}</b>${capa?`${capa.veredicto||''}${capa.comp!=null?` · ${n0(capa.comp)} h de ${n0(capa.disp)} h`:''}`:LAB?'horas comprometidas':'Sin hoja de trabajo conectada'}</div>
@@ -858,7 +862,7 @@ function planPanel(panel){
   // Sesión por sesión
   const t=document.createElement('article');t.className='tarjeta ancha';
   const lista=enRango.slice().reverse();
-  t.innerHTML=`<h3>Sesión por sesión</h3><p class="exp">${lista.length} sesiones programadas en el periodo, de la más reciente a la más antigua.</p><div class="tabla-scroll" style="max-height:460px">${tablaHTML({cols:['Fecha','Planificado','Plan','Realizado','Real','Estado'],
+  t.innerHTML=`<h3>Sesión por sesión${ayuda('sesiones')}</h3><p class="exp">${lista.length} sesiones programadas en el periodo, de la más reciente a la más antigua.</p><div class="tabla-scroll" style="max-height:460px">${tablaHTML({cols:['Fecha','Planificado','Plan','Realizado','Real','Estado'],
     filas:lista.map(c=>[fCorta(c.f),`<span style="display:block;text-align:left;max-width:240px;overflow:hidden;text-overflow:ellipsis">${(c.t||c.tipo).replace(/</g,'&lt;')}</span>`,[c.min?hm(c.min/60):'',c.km?n1(c.km)+' km':'',c.tss?c.tss+' TSS':''].filter(Boolean).join(' · '),
       c.act?`<span style="display:block;text-align:left;max-width:200px;overflow:hidden;text-overflow:ellipsis">${(c.act.nombre||TIPO[c.act.tipo]||'').replace(/</g,'&lt;')}</span>`:'—',
       c.act?[hm(c.act.min/60),c.act.km?n1(c.act.km)+' km':'',tss(c.act)?tss(c.act)+' TSS':''].filter(Boolean).join(' · '):'',chip(c.est[0],c.est[1])])})}</div>`;
