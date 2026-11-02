@@ -113,6 +113,7 @@ def resumir_actividad(a):
         "efecto": a.get("trainingEffectLabel"),
         "desnivel": r(a.get("elevationGain"), 0),
         "potencia": a.get("avgPower"),
+        "np": r(a.get("normPower"), 0),
         "cadencia": r(a.get("averageRunningCadenceInStepsPerMinute"), 0),
         "zonas": [r((a.get(f"hrTimeInZone_{i}") or 0) / 60, 1) for i in range(1, 6)],
     }
@@ -126,14 +127,28 @@ def resumir_predicciones(pred):
     return {k: pred.get(k) for k in ["time5K", "time10K", "timeHalfMarathon", "timeMarathon"]}
 
 
-def paquete(dias: dict, actividades: dict, predicciones) -> dict:
+EXTRAS = ("umbrales", "plan", "marcas", "segmentos")  # datos opcionales que también lee la plantilla
+
+
+def paquete(dias: dict, actividades: dict, predicciones, **extra) -> dict:
     """Ordena el historial resumido en lo que lee la plantilla."""
     return {
         "generado": datetime.now().strftime("%Y-%m-%dT%H:%M"),
         "dias": [dias[k] for k in sorted(dias)],
         "actividades": sorted(actividades.values(), key=lambda a: (a["f"], a.get("hora") or ""), reverse=True),
         "predicciones": predicciones,
+        **{k: v for k, v in extra.items() if k in EXTRAS and v},
     }
+
+
+def resumir_umbrales(lt):
+    """Umbral de lactato del reloj: FC (ppm), potencia (W) y ritmo de umbral."""
+    sh = (lt or {}).get("speed_and_heart_rate") or {}
+    pw = (lt or {}).get("power") or {}
+    vel = sh.get("speed")  # Garmin la da en décimas de m/s
+    return {"lthr": sh.get("heartRate"), "ftp": pw.get("functionalThresholdPower"),
+            "ritmo_umbral": round(1000 / (vel * 10) / 60, 2) if vel else None,
+            "fecha": (sh.get("calendarDate") or "")[:10]}
 
 
 def renderizar(datos: dict, contrasena=None) -> str:

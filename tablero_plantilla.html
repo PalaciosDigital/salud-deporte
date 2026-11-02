@@ -132,6 +132,14 @@ th{color:var(--tinta2);font-weight:600;position:sticky;top:0;background:var(--su
 #candado label{font-size:13px;color:var(--tinta2);display:flex;gap:8px;align-items:center}
 #candado button{font:inherit;font-weight:600;padding:11px;border:0;border-radius:10px;background:var(--tinta);color:var(--superficie);cursor:pointer}
 #candado .error{margin:0;color:var(--critico);font-size:13px;min-height:1em}
+.sesiones{display:flex;flex-direction:column;gap:8px}
+.sesion{border:1px solid var(--borde);border-radius:10px;padding:10px 12px;font-size:13.5px}
+.sesion .cab{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.sesion .cab b{font-weight:600}
+.sesion .meta{color:var(--tinta2);font-size:12.5px;margin-top:2px}
+.sesion details{margin-top:4px}
+.sesion pre{white-space:pre-wrap;font:inherit;font-size:12.5px;color:var(--tinta2);margin:6px 0 0}
+td a{color:inherit}
 footer{margin-top:28px;font-size:12px;color:var(--tenue)}
 [hidden]{display:none!important}
 
@@ -176,6 +184,7 @@ footer{margin-top:28px;font-size:12px;color:var(--tenue)}
       <button role="tab" data-t="rend">Rendimiento</button>
       <button role="tab" data-t="desc">Descanso</button>
       <button role="tab" data-t="perf">Performance</button>
+      <button role="tab" data-t="plan">Plan</button>
     </nav>
     <div class="periodo">
       <span>Periodo de los gráficos</span>
@@ -190,8 +199,9 @@ footer{margin-top:28px;font-size:12px;color:var(--tenue)}
   <section id="p-rend" class="rejilla"></section>
   <section id="p-desc" class="rejilla" hidden></section>
   <section id="p-perf" class="rejilla" hidden></section>
+  <section id="p-plan" class="rejilla" hidden></section>
 
-  <footer>Datos de Garmin Connect (Forerunner 965). Se actualiza solo a las 7:15, 13:00 y 21:30; recarga la página para ver lo último. Las valoraciones son orientativas, no un consejo médico. <a href="#" id="olvidar" style="color:inherit">Olvidar contraseña en este dispositivo</a></footer>
+  <footer>Datos de Garmin Connect (Forerunner 965). Plan de TrainingPeaks y marcas de Strava cuando están conectados. Se actualiza solo cada hora de 6:15 a 22:15; recarga la página para ver lo último. Las valoraciones son orientativas, no un consejo médico. <a href="#" id="olvidar" style="color:inherit">Olvidar contraseña en este dispositivo</a></footer>
 </div>
 <div id="globo" role="tooltip" hidden></div>
 
@@ -239,6 +249,11 @@ const GLOS={
   pred:['Predicciones de carrera','Lo que Garmin estima que podrías correr hoy en cada distancia, si salieras a correrla al máximo y bien preparado.','Se basan en tu VO2máx y tu historial. Para media maratón y maratón asumen que has hecho tiradas largas.'],
   balance:['Balance de carga','Cómo se reparte tu esfuerzo de las últimas 4 semanas. Aeróbica baja: rodajes suaves (Z1–Z2). Aeróbica alta: tempo y umbral (Z3–Z4). Anaeróbica: series cortas e intensas.','La barra clara es tu objetivo y la marca oscura, dónde estás. Lo ideal es que las tres marcas caigan dentro de su objetivo.'],
   sueno_prep:['Sueño frente a preparación','Cada punto es un día: el puntaje de sueño de esa noche y la preparación con la que amaneciste.','Si los puntos suben hacia la derecha, dormir bien es lo que más te recupera.'],
+  tss:['TSS (puntos de estrés de entrenamiento)','Cuánto te cargó cada sesión, sumando duración e intensidad. Una hora justo en tu umbral = 100 TSS. Lo usa TrainingPeaks.','Aquí se estima con tu potencia normalizada frente a tu potencia de umbral (si la hay) o con tu pulso medio frente a tu FC de umbral. Puede diferir algo del valor de TrainingPeaks.'],
+  pmc:['Forma, fatiga y balance','Forma (CTL): tu nivel de entrenamiento acumulado, media de TSS de unas 6 semanas. Fatiga (ATL): lo cargado en la última semana. Balance (TSB): forma menos fatiga; dice qué tan fresco estás.','Balance sobre +5: fresco, bueno para competir · entre −10 y +5: neutro · entre −30 y −10: cargando, la zona donde se mejora · bajo −30: sobrecarga. Subir la forma más de 5–8 puntos por semana aumenta el riesgo de lesión.'],
+  plan:['Plan de TrainingPeaks','Las sesiones que tu entrenador te programó en TrainingPeaks, comparadas con lo que registró tu reloj ese día.','Hecho: entrenaste ese día y duró al menos el 80 % de lo planificado · Parcial: entrenaste menos del 80 % · No hecho: no hay actividad ese día.'],
+  marcas:['Mejores marcas (Strava)','Tus mejores tiempos en cada distancia, sacados de cualquier tramo de tus carreras (no hace falta que fuera una competencia).','Si la marca del periodo está cerca de la histórica, estás en tu mejor momento.'],
+  segmentos:['Segmentos (Strava)','Tramos fijos de calle o montaña que Strava mide cada vez que pasas por ellos. Sirven para compararte contigo mismo en el mismo terreno.','Si tu último intento se acerca a tu mejor tiempo, vas en buena forma; si se aleja, puede ser cansancio o que fuiste suave.'],
   efic:['Eficiencia aeróbica','Metros que avanzas por cada latido del corazón cuando corres (velocidad ÷ pulso medio).','Si sube, tu corazón trabaja menos para ir igual de rápido: estás más en forma.']
 };
 const ayuda = k => GLOS[k]?`<button class="info" type="button" data-k="${k}" aria-label="Qué significa ${GLOS[k][0]}" aria-expanded="false">?</button>`:'';
@@ -283,6 +298,19 @@ const ult = k => {for(let i=DIAS.length-1;i>=0;i--){if(DIAS[i][k]!=null)return D
 const ventana = (n,off=0) => {const fin=sumarDias(ultimo,-off), ini=sumarDias(fin,-n+1);return DIAS.filter(d=>d.f>=ini&&d.f<=fin);};
 const actsVentana = (n,off=0) => {const fin=sumarDias(ultimo,-off), ini=sumarDias(fin,-n+1);return ACTS.filter(a=>a.f>=ini&&a.f<=fin);};
 const eficiencia = a => a.ritmo&&a.fc?(1000/a.ritmo)/a.fc:null; // metros por latido
+/* TSS estimado por sesión y curva forma/fatiga/balance (método TrainingPeaks) */
+const UMB = D.umbrales||{};
+function tss(a){const h=(a.min||0)/60;if(!h)return 0;
+  if(a.np&&UMB.ftp&&esCarrera(a.tipo)){const IF=a.np/UMB.ftp;return Math.round(h*IF*IF*100);}
+  if(a.fc&&UMB.lthr){const IF=a.fc/UMB.lthr;return Math.round(h*IF*IF*100);}
+  return 0;}
+const PMC = (()=>{const m={};if(!DIAS.length||!(UMB.lthr||UMB.ftp))return m;
+  const porDia={};ACTS.forEach(a=>{porDia[a.f]=(porDia[a.f]||0)+tss(a);});
+  let ctl=0,atl=0,d=DIAS[0].f;
+  while(d<=ultimo){const t=porDia[d]||0;const tsb=ctl-atl;ctl+= (t-ctl)/42;atl+=(t-atl)/7;m[d]={tss:t,ctl:Math.round(ctl*10)/10,atl:Math.round(atl*10)/10,tsb:Math.round(tsb*10)/10};d=sumarDias(d,1);}
+  return m;})();
+DIAS.forEach(d=>{const p=PMC[d.f];if(p){d.ctl=p.ctl;d.atl=p.atl;d.tsb=p.tsb;d.tss=p.tss;}});
+const zonaTSB = v => v==null?null:v>5?['Fresco','bien','Estás descansado: buen momento para competir o para una sesión exigente.']:v>=-10?['Neutro','bien','Equilibrio entre carga y descanso.']:v>=-30?['Cargando','aviso','Estás acumulando carga: es donde se mejora, siempre que recuperes.']:['Sobrecarga','serio','Mucha fatiga acumulada: baja la carga unos días.'];
 
 /* Con periodos largos, los gráficos diarios pasan a promedios semanales */
 const SEMANAL = () => rango>120;
@@ -320,7 +348,7 @@ function fichas(){
   if(v)piezas.push(`VO2máx <b>${v.vo2}</b>${ayuda('vo2')}`);
   if(r)piezas.push(`FC en reposo <b>${r.fc_reposo} ppm</b>${ayuda('fc_reposo')}`);
   if(b)piezas.push(`Body Battery hoy <b>${b.bb_min}–${b.bb_max}</b>${ayuda('bb')}`);
-  if(ua)piezas.push(`Último entrenamiento: <b>${TIPO[ua.tipo]||ua.tipo}${ua.km?` de ${ua.km.toFixed(1)} km`:''}</b>, ${fCorta(ua.f)} (hace ${entre(ua.f,ultimo)} días)`);
+  if(ua)piezas.push(`Último entrenamiento: <b>${TIPO[ua.tipo]||ua.tipo}${ua.km?` de ${ua.km.toFixed(1)} km`:''}</b>, ${fCorta(ua.f)} (${({0:'hoy',1:'ayer'})[entre(ua.f,ultimo)]||'hace '+entre(ua.f,ultimo)+' días'})`);
   document.getElementById('resumenLinea').innerHTML=piezas.map(x=>`<span>${x}</span>`).join('');
 }
 
@@ -368,6 +396,8 @@ function valorar(){
     add('rend',t==='aviso'?'aviso':t,`Eficiencia${ayuda('efic')}: avanzas <b>${n2(efU)} m por latido</b>, ${Math.abs(c)<1?'igual que':c>0?`un ${n0(c)} % más que`:`un ${n0(-c)} % menos que`} en los 3 meses anteriores.`);}
   const v0=ventana(14,90).filter(d=>d.vo2).pop(), v1=ult('vo2');
   if(v1&&v0){const c=v1.vo2-v0.vo2;add('rend',c>=0.5?'bien':c>-0.5?'aviso':'serio',`VO2máx <b>${v1.vo2}</b> (${signo(c,1)} en 3 meses).`);}
+  if((D.plan||[]).length){const C=cruzarPlan().filter(c=>c.f>=sumarDias(ultimo,-27)&&c.f<ultimo);if(C.length){const ok=C.filter(c=>c.est[1]==='bien').length,pc=Math.round(ok/C.length*100);
+    add('rend',pc>=80?'bien':pc>=60?'aviso':'serio',`Plan de tu entrenador${ayuda('plan')}: cumpliste <b>${ok} de ${C.length} sesiones</b> (${pc} %).`);pts.rend+=pc>=80?0:pc>=60?1:2;}}
   hacer.rend = sin!=null&&sin>=7?'Retoma con 2–3 rodajes suaves en Z2 esta semana antes de volver a meter series o tiradas largas.'
     : cambio!=null&&cambio>30?'Subiste mucho el volumen: no aumentes más de un 10 % por semana para evitar lesiones.'
     : efU&&efP&&efU<efP*0.97?'Tu eficiencia bajó: más rodajes suaves en Z2 y revisa si estás descansando lo suficiente.'
@@ -381,6 +411,8 @@ function valorar(){
     add('perf',t,`Estado de entrenamiento${ayuda('estado')}: <b>${ESTADO[est]||est}</b>, ${ESTADO_TXT[est]||''}.`);}
   if(p7!=null){const t=p7>=65?'bien':p7>=45?'aviso':'serio';pts.perf+=t==='bien'?0:1;
     add('perf',t,`Preparación media de los últimos 7 días: <b>${n0(p7)}/100</b>.`);}
+  const pm=PMC[ultimo];
+  if(pm){const z=zonaTSB(pm.tsb);add('perf',z[1],`Balance${ayuda('pmc')} (forma ${n0(pm.ctl)} − fatiga ${n0(pm.atl)}): <b>${signo(pm.tsb)}, ${z[0].toLowerCase()}</b>.`);}
   const b=(ult('bal')||{}).bal;
   if(b&&b.trainingBalanceFeedbackPhrase){const ok=b.trainingBalanceFeedbackPhrase==='BALANCED';
     add('perf',ok?'bien':'aviso',`Balance de carga${ayuda('balance')}: <b>${ok?'equilibrado':'desequilibrado'}</b>${ok?' entre rodajes suaves, ritmos medios e intensidad.':'.'}`);}
@@ -516,8 +548,8 @@ function rendimiento(panel){
   }
 
   const el=document.createElement('article');el.className='tarjeta ancha';
-  el.innerHTML=`<h3>Actividades</h3><p class="exp">${A.length} en el periodo, de la más reciente a la más antigua.</p><div class="tabla-scroll" style="max-height:420px">${tablaHTML({cols:['Fecha','Actividad','Tipo','Km','Tiempo','Ritmo','Pulso medio','Carga','Efecto'],
-    filas:A.map(a=>[`${fCorta(a.f)} <span style="color:var(--tenue)">${a.hora}</span>`,`<span style="display:block;text-align:left;max-width:220px;overflow:hidden;text-overflow:ellipsis">${a.nombre||''}</span>`,TIPO[a.tipo]||a.tipo,a.km?a.km.toFixed(2):'',hm(a.min/60),a.ritmo?ritmo(a.ritmo):'',a.fc??'',a.carga??'',EFECTO[a.efecto]||''])})}</div>`;
+  el.innerHTML=`<h3>Actividades</h3><p class="exp">${A.length} en el periodo, de la más reciente a la más antigua.</p><div class="tabla-scroll" style="max-height:420px">${tablaHTML({cols:['Fecha','Actividad','Tipo','Km','Tiempo','Ritmo','Pulso medio','TSS','Carga Garmin','Efecto'],
+    filas:A.map(a=>[`${fCorta(a.f)} <span style="color:var(--tenue)">${a.hora}</span>`,`<span style="display:block;text-align:left;max-width:220px;overflow:hidden;text-overflow:ellipsis">${a.nombre||''}</span>`,TIPO[a.tipo]||a.tipo,a.km?a.km.toFixed(2):'',hm(a.min/60),a.ritmo?ritmo(a.ritmo):'',a.fc??'',tss(a)||'',a.carga??'',EFECTO[a.efecto]||''])})}</div>`;
   panel.appendChild(el);
 }
 
@@ -575,6 +607,20 @@ function descanso(panel){
 function performance(panel){
   const R=agrupar(diasR()), et=R.map(d=>fCorta(d.f)), nota=SEMANAL()?' Con periodos largos se muestran promedios semanales.':'';
 
+  const vt=R.filter(d=>d.ctl!=null);
+  if(vt.length){
+    const hoyP=PMC[ultimo]||{}, hace7=PMC[sumarDias(ultimo,-7)]||{}, rampa=hoyP.ctl!=null&&hace7.ctl!=null?hoyP.ctl-hace7.ctl:null, z=zonaTSB(hoyP.tsb);
+    nuevo(tarjeta(panel,{titulo:'Forma, fatiga y balance',k:'pmc',ancha:true,exp:`Calculado con el TSS de cada sesión, como en TrainingPeaks (FC de umbral ${UMB.lthr||'—'} ppm${UMB.ftp?`, potencia de umbral ${UMB.ftp} W`:''}).${nota}`,
+      lectura:z?`Hoy: forma ${n0(hoyP.ctl)}, fatiga ${n0(hoyP.atl)}, balance ${signo(hoyP.tsb)} → ${z[0].toLowerCase()}. ${z[2]}${rampa!=null?` Tu forma ${rampa>=0?'subió':'bajó'} ${n1(Math.abs(rampa))} puntos en 7 días${rampa>8?' (subida muy rápida: riesgo de lesión)':''}.`:''}`:'',
+      leyenda:[{t:'Forma (CTL)',c:css('--s1'),linea:true},{t:'Fatiga (ATL)',c:css('--s2'),linea:true},{t:'Balance (TSB)',c:css('--s3')}],
+      tabla:()=>({cols:['Día','TSS','Forma','Fatiga','Balance'],filas:vt.map(d=>[etiquetaDia(d),n0(d.tss),n0(d.ctl),n0(d.atl),signo(d.tsb)])})}),{
+      type:'line',data:{labels:et,datasets:[
+        {label:'Forma (CTL)',data:R.map(d=>d.ctl),borderColor:css('--s1'),tension:.3,pointBackgroundColor:css('--s1'),pointBorderColor:css('--superficie')},
+        {label:'Fatiga (ATL)',data:R.map(d=>d.atl),borderColor:css('--s2'),tension:.3,pointBackgroundColor:css('--s2'),pointBorderColor:css('--superficie')},
+        {type:'bar',label:'Balance (TSB)',data:R.map(d=>d.tsb),backgroundColor:lavar(css('--s3'),.55),borderRadius:2,maxBarThickness:10}]},
+      options:{scales:ejes(),interaction:{mode:'index',intersect:false},plugins:{tooltip:{callbacks:{title:i=>etiquetaDia(R[i[0].dataIndex]),label:i=>` ${i.dataset.label}: ${i.dataset.label.startsWith('Balance')?signo(i.raw):n0(i.raw)}`,footer:i=>{const d=R[i[0].dataIndex];const z=zonaTSB(d.tsb);return (d.semanal?'':`TSS del día: ${n0(d.tss)}\n`)+(z?`Estado: ${z[0]}`:'');}}}}}});
+  }
+
   const vc=R.filter(d=>d.carga_aguda!=null);
   if(vc.length){
     const dentro=Math.round(vc.filter(d=>d.carga_min!=null&&d.carga_aguda>=d.carga_min&&d.carga_aguda<=d.carga_max).length/vc.length*100);
@@ -627,9 +673,97 @@ function performance(panel){
   }
 }
 
+/* ---- Plan (TrainingPeaks) ---- */
+const grupoPlan = t => ({Carrera:'Carrera',Fuerza:'Fuerza',Caminata:'Caminata'})[t]||'Otros';
+function cruzarPlan(){
+  const P=(D.plan||[]).filter(p=>p.tipo!=='Descanso'), usados=new Set();
+  return P.map(p=>{
+    const delDia=ACTS.filter(a=>a.f===p.f&&!usados.has(a.id));
+    const m=delDia.find(a=>grupo(a.tipo)===grupoPlan(p.tipo))||delDia.find(a=>grupo(a.tipo)!=='Caminata')||null;
+    if(m)usados.add(m.id);
+    let est;
+    if(p.f>ultimo)est=['Próxima','neutro'];
+    else if(m){const r=p.min?m.min/p.min:1;est=r>=0.8?['Hecho','bien']:['Parcial','aviso'];}
+    else if(p.f===ultimo)est=['Pendiente hoy','neutro'];
+    else est=['No hecho','serio'];
+    return {...p,act:m,est};});
+}
+function planPanel(panel){
+  if(!(D.plan||[]).length){vacio(panel,'Plan de TrainingPeaks','Todavía no está conectado el calendario de TrainingPeaks. Cuando lo conectes, aquí verás el plan de tu entrenador frente a lo que hiciste.');return;}
+  const C=cruzarPlan(), enRango=C.filter(c=>c.f>=desde()&&c.f<=ultimo), pasadas=enRango.filter(c=>c.est[0]!=='Pendiente hoy');
+  const hechas=pasadas.filter(c=>c.est[1]==='bien').length, parciales=pasadas.filter(c=>c.est[1]==='aviso').length;
+  const prox=C.filter(c=>c.f>=ultimo&&c.f<=sumarDias(ultimo,7));
+
+  // Próximos 7 días
+  const el=document.createElement('article');el.className='tarjeta';
+  el.innerHTML=`<h3>Próximos 7 días${ayuda('plan')}</h3><p class="exp">Lo que tu entrenador programó en TrainingPeaks.</p><div class="sesiones">${prox.length?prox.map(c=>`<div class="sesion"><div class="cab"><b>${fCorta(c.f)} · ${c.t||c.tipo}</b>${chip(c.est[0],c.est[1])}</div><div class="meta">${[c.tipo,c.min?hm(c.min/60):'',c.km?n1(c.km)+' km':'',c.tss?c.tss+' TSS':''].filter(Boolean).join(' · ')}</div>${c.d?`<details><summary>Ver detalle</summary><pre>${c.d.replace(/</g,'&lt;')}</pre></details>`:''}</div>`).join(''):'<div class="vacio">No hay sesiones programadas en los próximos 7 días.</div>'}</div>`;
+  panel.appendChild(el);
+
+  // Cumplimiento semanal
+  const sem=new Map();let w=lunes(desde());while(w<=ultimo){sem.set(w,{plan:0,hecho:0,np:0,nh:0});w=sumarDias(w,7);}
+  enRango.forEach(c=>{const s=sem.get(lunes(c.f));if(!s)return;s.plan+=c.min||0;s.np++;if(c.est[1]==='bien'){s.nh++;}});
+  actsR().forEach(a=>{const s=sem.get(lunes(a.f));if(s&&grupo(a.tipo)!=='Caminata')s.hecho+=a.min||0;});
+  const S=[...sem.entries()];
+  nuevo(tarjeta(panel,{titulo:'Planificado frente a realizado',k:'plan',exp:'Minutos por semana: lo que programó tu entrenador y lo que entrenaste (sin contar caminatas).',
+    lectura:pasadas.length?`Cumpliste ${hechas} de ${pasadas.length} sesiones del periodo (${Math.round(hechas/pasadas.length*100)} %)${parciales?`, y ${parciales} a medias`:''}.`:'Aún no hay sesiones pasadas en este periodo.',
+    leyenda:[{t:'Planificado',c:css('--s2')},{t:'Realizado',c:css('--s1')}],
+    tabla:()=>({cols:['Semana del','Planificado','Realizado','Sesiones hechas'],filas:S.map(([k,s])=>[fCorta(k),hm(s.plan/60),hm(s.hecho/60),`${s.nh}/${s.np}`])})}),{
+    type:'bar',data:{labels:S.map(([k])=>fCorta(k)),datasets:[
+      {label:'Planificado',data:S.map(([,s])=>Math.round(s.plan)),backgroundColor:css('--s2'),borderRadius:{topLeft:4,topRight:4},borderSkipped:'bottom',maxBarThickness:18},
+      {label:'Realizado',data:S.map(([,s])=>Math.round(s.hecho)),backgroundColor:css('--s1'),borderRadius:{topLeft:4,topRight:4},borderSkipped:'bottom',maxBarThickness:18}]},
+    options:{scales:ejes({y:{ticks:{callback:v=>v+' min'}}}),interaction:{mode:'index',intersect:false},plugins:{tooltip:{callbacks:{title:i=>'Semana del '+fLarga(S[i[0].dataIndex][0]),label:i=>` ${i.dataset.label}: ${hm(i.raw/60)}`,footer:i=>{const s=S[i[0].dataIndex][1];return s.np?`Sesiones hechas: ${s.nh} de ${s.np}`:'';}}}}}});
+
+  // Sesión por sesión
+  const t=document.createElement('article');t.className='tarjeta ancha';
+  const lista=enRango.slice().reverse();
+  t.innerHTML=`<h3>Sesión por sesión</h3><p class="exp">${lista.length} sesiones programadas en el periodo, de la más reciente a la más antigua.</p><div class="tabla-scroll" style="max-height:460px">${tablaHTML({cols:['Fecha','Planificado','Plan','Realizado','Real','Estado'],
+    filas:lista.map(c=>[fCorta(c.f),`<span style="display:block;text-align:left;max-width:240px;overflow:hidden;text-overflow:ellipsis">${(c.t||c.tipo).replace(/</g,'&lt;')}</span>`,[c.min?hm(c.min/60):'',c.km?n1(c.km)+' km':'',c.tss?c.tss+' TSS':''].filter(Boolean).join(' · '),
+      c.act?`<span style="display:block;text-align:left;max-width:200px;overflow:hidden;text-overflow:ellipsis">${(c.act.nombre||TIPO[c.act.tipo]||'').replace(/</g,'&lt;')}</span>`:'—',
+      c.act?[hm(c.act.min/60),c.act.km?n1(c.act.km)+' km':'',tss(c.act)?tss(c.act)+' TSS':''].filter(Boolean).join(' · '):'',chip(c.est[0],c.est[1])])})}</div>`;
+  panel.appendChild(t);
+}
+
+/* ---- Strava: mejores marcas y segmentos (dentro de Rendimiento) ---- */
+const NOM_DIST={'400m':'400 m','1/2 mile':'½ milla','1k':'1 km','1 mile':'1 milla','2 mile':'2 millas','5k':'5 km','10k':'10 km','15k':'15 km','10 mile':'10 millas','20k':'20 km','Half-Marathon':'Media maratón','30k':'30 km','Marathon':'Maratón'};
+const KM_DIST={'400m':.4,'1/2 mile':.8047,'1k':1,'1 mile':1.609,'2 mile':3.219,'5k':5,'10k':10,'15k':15,'10 mile':16.09,'20k':20,'Half-Marathon':21.0975,'30k':30,'Marathon':42.195};
+const linkStrava = (id,txt) => `<a href="https://www.strava.com/activities/${id}" target="_blank" rel="noopener">${txt}</a>`;
+function stravaPanel(panel){
+  const M=D.marcas, SG=D.segmentos;
+  if(!M&&!SG)return;
+  if(M){
+    const ini=desde(), filas=Object.keys(NOM_DIST).filter(k=>M[k]&&M[k].length).map(k=>{
+      const todas=M[k], mejor=todas.reduce((a,b)=>b[1]<a[1]?b:a), per=todas.filter(x=>x[0]>=ini), mp=per.length?per.reduce((a,b)=>b[1]<a[1]?b:a):null;
+      return [NOM_DIST[k],`${linkStrava(mejor[2],segs(mejor[1]))} <span style="color:var(--tenue)">${fCorta(mejor[0])} ${mejor[0].slice(0,4)}</span>`,ritmo(mejor[1]/60/KM_DIST[k])+' /km',
+        mp?`${linkStrava(mp[2],segs(mp[1]))} <span style="color:var(--tenue)">${fCorta(mp[0])}</span>`:'—',mp?(mp[1]===mejor[1]?'<b>¡Récord!</b>':'+'+segs(mp[1]-mejor[1])):'—'];});
+    const el=document.createElement('article');el.className='tarjeta ancha';
+    el.innerHTML=`<h3>Mejores marcas${ayuda('marcas')}</h3><p class="exp">Desde Strava. "En el periodo" usa el rango elegido arriba; la diferencia es frente a tu mejor marca histórica.</p><div class="tabla-scroll">${tablaHTML({cols:['Distancia','Mejor marca','Ritmo','En el periodo','Diferencia'],filas})}</div>`;
+    panel.appendChild(el);
+
+    const serie=k=>(M[k]||[]).filter(x=>x[0]>=ini).map(x=>({x:new Date(x[0]+'T12:00:00').getTime(),y:x[1]/60/KM_DIST[k],r:x}));
+    const s5=serie('5k'), s10=serie('10k');
+    if(s5.length+s10.length>2){
+      nuevo(tarjeta(panel,{titulo:'Tus 5 km y 10 km en cada carrera',k:'marcas',exp:'Ritmo del tramo más rápido de 5 y 10 km dentro de cada carrera. Más arriba = más rápido.',
+        leyenda:[{t:'5 km',c:css('--s1')},{t:'10 km',c:css('--s2')}]}),{
+        type:'scatter',data:{datasets:[
+          {label:'5 km',data:s5,backgroundColor:css('--s1'),borderColor:css('--superficie'),pointRadius:4.5,pointHoverRadius:7},
+          {label:'10 km',data:s10,backgroundColor:css('--s2'),borderColor:css('--superficie'),pointRadius:4.5,pointHoverRadius:7}]},
+        options:{scales:ejes({x:{type:'linear',grid:{display:false},ticks:{callback:v=>{const d=new Date(v);return `${d.getDate()} ${MESES[d.getMonth()]}`;},maxTicksLimit:8}},y:{reverse:true,ticks:{callback:v=>ritmo(v)+' /km'}}}),
+          plugins:{tooltip:{callbacks:{title:i=>fLarga(i[0].raw.r[0]),label:i=>` ${i.dataset.label} en ${segs(i.raw.r[1])} (${ritmo(i.raw.y)} /km)`}}}}});
+    }
+  }
+  if(SG&&SG.length){
+    const filas=SG.map(s=>{const it=s.intentos,mejor=it.reduce((a,b)=>b[1]<a[1]?b:a),u=it[it.length-1];
+      return [`<a href="https://www.strava.com/segments/${s.id}" target="_blank" rel="noopener">${(s.n||'Segmento').replace(/</g,'&lt;')}</a>`,s.d?n1(s.d/1000)+' km':'',s.g!=null?n1(s.g)+' %':'',it.length,
+        `${segs(mejor[1])} <span style="color:var(--tenue)">${fCorta(mejor[0])} ${mejor[0].slice(2,4)}</span>`,`${segs(u[1])} <span style="color:var(--tenue)">${fCorta(u[0])}</span>`,u[1]===mejor[1]?'<b>Récord</b>':'+'+segs(u[1]-mejor[1])];});
+    const el=document.createElement('article');el.className='tarjeta ancha';
+    el.innerHTML=`<h3>Tus segmentos más repetidos${ayuda('segmentos')}</h3><p class="exp">Desde Strava, los 20 tramos por los que más pasas.</p><div class="tabla-scroll" style="max-height:420px">${tablaHTML({cols:['Segmento','Distancia','Pendiente','Intentos','Mejor','Último','Último vs. mejor'],filas})}</div>`;
+    panel.appendChild(el);
+  }
+}
+
 /* ---------- render ---------- */
-const paneles={rend:rendimiento,desc:descanso,perf:performance};
-const INTRO={rend:'Rendimiento: cuánto entrenas y cómo responde tu cuerpo al correr.',desc:'Descanso: cómo duermes y cuánto te recuperas día a día.',perf:'Performance: el equilibrio entre la carga que haces y lo preparado que estás para asumirla.'};
+const paneles={rend:p=>{rendimiento(p);stravaPanel(p);},desc:descanso,perf:performance,plan:planPanel};
+const INTRO={rend:'Rendimiento: cuánto entrenas y cómo responde tu cuerpo al correr.',desc:'Descanso: cómo duermes y cuánto te recuperas día a día.',perf:'Performance: el equilibrio entre la carga que haces y lo preparado que estás para asumirla.',plan:'Plan: lo que tu entrenador programó en TrainingPeaks frente a lo que hiciste.'};
 function render(){
   ocultar();
   graficos.splice(0).forEach(c=>c.destroy());

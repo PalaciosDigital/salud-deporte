@@ -2,6 +2,7 @@
 
   python nube.py actualizar <datos.enc> <carpeta_salida>   # lo corre GitHub Actions
   python nube.py sembrar <carpeta_salida>                   # una vez, en la Mac: sube el historial local
+  python nube.py agregar <datos.enc>                        # en la Mac: suma Strava / TrainingPeaks / potencia
 
 Variables: DATOS_KEY (llave de 32 bytes en base64) y TABLERO_CLAVE (contraseña del tablero).
 Nada se escribe sin cifrar: datos.enc lleva el historial resumido y la sesión de Garmin;
@@ -17,7 +18,7 @@ from pathlib import Path
 
 warnings.filterwarnings("ignore")
 from cifrado import cifrar_objeto, descifrar_objeto, llave_desde_texto  # noqa: E402
-from generar_tablero import paquete, renderizar, resumir_actividad, resumir_dia, resumir_predicciones  # noqa: E402
+from generar_tablero import paquete, renderizar, resumir_actividad, resumir_dia, resumir_predicciones, resumir_umbrales, EXTRAS  # noqa: E402
 
 DIAS_A_REFRESCAR = 4
 
@@ -27,7 +28,7 @@ def publicar(h: dict, salida: Path, llave: bytes, clave: str):
     web = salida / "web"
     web.mkdir(parents=True, exist_ok=True)
     (salida / "datos.enc").write_bytes(cifrar_objeto(h, llave))
-    (web / "index.html").write_text(renderizar(paquete(h["dias"], h["actividades"], h.get("predicciones")), clave))
+    (web / "index.html").write_text(renderizar(paquete(h["dias"], h["actividades"], h.get("predicciones"), **{k: h.get(k) for k in EXTRAS}), clave))
     (web / ".nojekyll").write_text("")
     (web / "robots.txt").write_text("User-agent: *\nDisallow: /\n")
 
@@ -65,6 +66,18 @@ def actualizar(entrada: Path, salida: Path):
         h["predicciones"] = resumir_predicciones(g.get_race_predictions()) or h.get("predicciones")
     except Exception:
         pass
+    try:
+        h["umbrales"] = resumir_umbrales(g.get_lactate_threshold(latest=True)) or h.get("umbrales")
+    except Exception as e:
+        print("Umbral de lactato no disponible:", e.__class__.__name__)
+
+    # Fuentes extra: si fallan, el tablero se publica igual con lo de Garmin
+    from fuentes import actualizar_plan, actualizar_strava
+    for nombre, fn in (("Strava", actualizar_strava), ("TrainingPeaks", actualizar_plan)):
+        try:
+            fn(h)
+        except Exception as e:
+            print(f"{nombre} no disponible esta vez: {e.__class__.__name__}: {str(e)[:120]}")
 
     h["tokens"] = g.client.dumps()  # guarda la sesión renovada para la próxima vez
     h["actualizado"] = datetime.now().isoformat(timespec="minutes")
@@ -90,9 +103,39 @@ def sembrar(salida: Path):
     print(f"Sembrado: {len(dias)} días, {len(acts)} actividades -> {salida/'datos.enc'}")
 
 
+def agregar(archivo: Path):
+    """En la Mac: abre datos.enc y le suma lo que haya en ~/.garminconnect (Strava, TrainingPeaks)
+    más la potencia normalizada del historial local. No toca la sesión de Garmin de la nube."""
+    carpeta = Path.home() / ".garminconnect"
+    llave = llave_desde_texto((carpeta / "datos_key").read_text())
+    h = descifrar_objeto(archivo.read_bytes(), llave)
+    cambios = []
+    s = carpeta / "strava.json"
+    if s.exists():
+        h["strava_sesion"] = json.loads(s.read_text())
+        cambios.append("Strava")
+    t = carpeta / "tp_ical_url"
+    if t.exists() and t.read_text().strip().startswith(("http", "webcal")):
+        h["tp_ical"] = t.read_text().strip()
+        cambios.append("TrainingPeaks")
+    local = Path(os.environ.get("SALUD_LOCAL", "")) / "datos" / "actividades.json"
+    if local.exists():
+        n = 0
+        for a in json.loads(local.read_text()):
+            v = h["actividades"].get(str(a["activityId"]))
+            if v is not None and a.get("normPower") and not v.get("np"):
+                v["np"] = round(a["normPower"])
+                n += 1
+        cambios.append(f"potencia normalizada en {n} actividades")
+    archivo.write_bytes(cifrar_objeto(h, llave))
+    print("Agregado:", ", ".join(cambios) or "nada nuevo")
+
+
 if __name__ == "__main__":
     if sys.argv[1:2] == ["actualizar"]:
         actualizar(Path(sys.argv[2]), Path(sys.argv[3]))
+    elif sys.argv[1:2] == ["agregar"]:
+        agregar(Path(sys.argv[2]))
     elif sys.argv[1:2] == ["sembrar"]:
         sembrar(Path(sys.argv[2]))
     else:
