@@ -271,11 +271,16 @@ const TERCERA=[[/\bPlan de tu entrenador\b/g,'Plan del entrenador'],[/\btu entre
   [/\bCorriste\b/g,'Corrió'],[/\bLlevas\b/g,'Lleva'],[/\bllevas\b/g,'lleva'],[/\bavanzas\b/g,'avanza'],[/\b[Cc]umpliste\b/g,'cumplió'],[/\bRetoma\b/g,'Retomar'],
   [/\bSubiste\b/g,'Subió'],[/\bno aumentes\b/g,'no aumentar'],[/\bEstás\b/g,'Está'],[/\bestás\b/g,'está'],[/\bVas\b/g,'Va'],[/\bconservas\b/g,'conserva'],
   [/\bentrenas\b/g,'entrena'],[/\bempiezas\b/g,'empieza'],[/\bte recuperas\b/g,'se recupera'],[/\bNo subas\b/g,'No subir'],[/\bmete\b/g,'incluir'],
-  [/\bSigue así\b/g,'Mantener así'],[/\bReduce\b/g,'Reducir'],[/\bduerme más\b/g,'dormir más'],[/\bvuelve a subir\b/g,'volver a subir'],[/\bSuma\b/g,'Sumar'],
+  [/\bSigue así/g,'Mantener así'],[/\bReduce\b/g,'Reducir'],[/\bduerme más\b/g,'dormir más'],[/\bvuelve a subir\b/g,'volver a subir'],[/\bSuma\b/g,'Sumar'],
   [/\bcuida\b/g,'cuidar'],[/\bPuedes\b/g,'Puede'],[/\bpuedes\b/g,'puede'],[/\bPrioriza\b/g,'Priorizar'],[/\bTe faltan\b/g,'Le faltan'],[/\bDormiste\b/g,'Durmió'],
   [/\bpara ti\b/g,'para Diego'],[/\bAmaneciste\b/g,'Amaneció'],[/\bamaneces\b/g,'amanece'],[/\bEstuviste\b/g,'Estuvo'],[/\bcorres\b/g,'corre'],[/\bcorriste\b/g,'corrió'],
   [/\bhiciste\b/g,'hizo'],[/\bentrenaste\b/g,'entrenó'],[/\btienes\b/g,'tiene'],[/\bnecesitas\b/g,'necesita'],[/\bdormiste\b/g,'durmió'],[/\bte recupera\b/g,'le recupera'],
-  [/\bte deja\b/g,'le deja'],[/\bcompárate\b/g,'compáralo'],[/\bte compares\b/g,'lo compares'],[/\bQué hacer\b/g,'Sugerencia para planificar'],
+  [/\bte deja\b/g,'le deja'],[/\bcompárate\b/g,'compáralo'],[/\bte compares\b/g,'lo compares'],
+  [/\bte queda\b/g,'le queda'],[/\bte despertaste\b/g,'se despertó'],[/\bduermes\b/g,'duerme'],[/\bpierdes\b/g,'pierde'],[/\bmejoras\b/g,'mejora'],
+  [/\beres\b/g,'es'],[/\bcombinas\b/g,'combina'],[/\bfuiste\b/g,'fue'],[/\bsalieras\b/g,'saliera'],[/\bhas hecho\b/g,'ha hecho'],[/\bhiciste\b/g,'hizo'],
+  [/\bte cargó/g,'le cargó'],[/\bte programó/g,'le programó'],[/\bvas\b/g,'va'],[/\brecuperas\b/g,'recupera'],[/\brecuperarte\b/g,'recuperarse'],
+  [/\bhaces\b/g,'hace'],[/\bbaja la carga\b/g,'conviene bajar la carga'],[/\bvigila\b/g,'vigilar'],[/\bamaneciste\b/g,'amaneció'],[/\bmira la\b/g,'ver la'],[/\bdormiste\b/g,'durmió'],[/\bcumples\b/g,'cumple'],
+  [/\bte recuperas\b/g,'se recupera'],[/\bdespiertas\b/g,'despierta'],[/\bestés\b/g,'esté'],[/\bquieto\b/g,'quieto'],[/\bnecesitas\b/g,'necesita'],
   [/\bTus\b/g,'Sus'],[/\btus\b/g,'sus'],[/\bTu\b/g,'Su'],[/\btu\b/g,'su'],[/\bTU\b/g,'SU']];
 const aTercera = raiz => {if(!EN||!raiz)return;const w=document.createTreeWalker(raiz,NodeFilter.SHOW_TEXT);let n;while((n=w.nextNode())){let t=n.nodeValue,o=t;TERCERA.forEach(([r,s])=>t=t.replace(r,s));if(t!==o)n.nodeValue=t;}};
 
@@ -315,7 +320,8 @@ const GLOS={
   km:['Kilómetros por semana','Distancia total corrida cada semana (carrera, trail y cinta), de lunes a domingo.','Para progresar sin lesionarte, no subas más de un 10 % por semana.'],
   tiempo:['Tiempo de entrenamiento','Minutos en movimiento cada semana, separados por tipo de actividad.','Útil para ver si eres constante y si combinas carrera con fuerza (recomendable 1–2 sesiones de fuerza por semana).'],
   ritmo_fc:['Ritmo frente a pulso','Cada punto es una carrera: a qué ritmo fuiste y con qué pulso medio.','Si con el tiempo los puntos se mueven hacia abajo y a la derecha, corres más rápido con menos pulso: tu forma aeróbica mejora. Las carreras con cuestas o calor salen con más pulso.'],
-  zonas:['Zonas de frecuencia cardiaca','Tu pulso se divide en 5 zonas según tu FC máxima. Z1: muy suave · Z2: fácil, puedes conversar (la que construye base) · Z3: aeróbica, cómoda pero exigente · Z4: umbral, difícil sostener · Z5: máximo esfuerzo.','Para carreras de fondo, lo habitual es que cerca del 80 % del tiempo esté en Z1–Z2.'],
+  zonas:['Zonas de frecuencia cardiaca','Tu pulso dividido en las 5 zonas que tiene configuradas tu reloj (el rango en ppm de cada una aparece en la leyenda). Z1: muy suave · Z2: fácil · Z3: aeróbica · Z4: umbral · Z5: máximo esfuerzo.','Tu entrenador fija su propio rango de pulso en cada sesión y ese rango es el que manda: no tiene por qué coincidir con las zonas del reloj. Para ver si cumples sus rangos, mira la columna Pulso en la pestaña Plan.'],
+  pulso_plan:['Pulso frente al plan','En las sesiones continuas (sin series) en las que tu entrenador indica un rango de pulso, se compara ese rango con tu pulso medio de la sesión.','Dentro: hiciste la sesión a la intensidad pedida · Encima: fuiste más fuerte de lo pedido · Debajo: más suave. El pulso medio incluye calentamiento y vuelta a la calma, así que puede quedar algo por debajo del rango.'],
   pred:['Predicciones de carrera','Lo que Garmin estima que podrías correr hoy en cada distancia, si salieras a correrla al máximo y bien preparado.','Se basan en tu VO2máx y tu historial. Para media maratón y maratón asumen que has hecho tiradas largas.'],
   balance:['Balance de carga','Cómo se reparte tu esfuerzo de las últimas 4 semanas. Aeróbica baja: rodajes suaves (Z1–Z2). Aeróbica alta: tempo y umbral (Z3–Z4). Anaeróbica: series cortas e intensas.','La barra clara es tu objetivo y la marca oscura, dónde estás. Lo ideal es que las tres marcas caigan dentro de su objetivo.'],
   sueno_prep:['Sueño frente a preparación','Cada punto es un día: el puntaje de sueño de esa noche y la preparación con la que amaneciste.','Si los puntos suben hacia la derecha, dormir bien es lo que más te recupera.'],
@@ -469,12 +475,17 @@ function valorar(){
     add('rend',t==='aviso'?'aviso':t,`Eficiencia${ayuda('efic')}: avanzas <b>${n2(efU)} m por latido</b>, ${Math.abs(c)<1?'igual que':c>0?`un ${n0(c)} % más que`:`un ${n0(-c)} % menos que`} en los 3 meses anteriores.`);}
   const v0=ventana(14,90).filter(d=>d.vo2).pop(), v1=ult('vo2');
   if(v1&&v0){const c=v1.vo2-v0.vo2;add('rend',c>=0.5?'bien':c>-0.5?'aviso':'serio',`VO2máx <b>${v1.vo2}</b> (${signo(c,1)} en 3 meses).`);}
-  if((D.plan||[]).length){const C=cruzarPlan().filter(c=>c.f>=sumarDias(ultimo,-27)&&c.f<ultimo);if(C.length){const ok=C.filter(c=>c.est[1]==='bien').length,pc=Math.round(ok/C.length*100);
+  let pcPlan=null;
+  if((D.plan||[]).length){const C=cruzarPlan().filter(c=>c.f>=sumarDias(ultimo,-27)&&c.f<ultimo);if(C.length){const ok=C.filter(c=>c.est[1]==='bien').length,pc=Math.round(ok/C.length*100);pcPlan=pc;
     add('rend',pc>=80?'bien':pc>=60?'aviso':'serio',`Plan de tu entrenador${ayuda('plan')}: cumpliste <b>${ok} de ${C.length} sesiones</b> (${pc} %).`);pts.rend+=pc>=80?0:pc>=60?1:2;}}
+  const PP4=pulsoPlan().filter(c=>c.f>=sumarDias(ultimo,-27)&&c.f<=ultimo), enc4=PP4.filter(c=>c.pos==='encima').length, den4=PP4.filter(c=>c.pos==='dentro').length;
+  if(PP4.length){const pc=den4/PP4.length;add('rend',pc>=0.7?'bien':pc>=0.4?'aviso':'serio',`Pulso frente al plan${ayuda('pulso_plan')}: dentro del rango de tu entrenador en <b>${den4} de ${PP4.length} sesiones</b> continuas${enc4?` (${enc4} por encima)`:''}.`);pts.rend+=pc>=0.7?0:1;}
   hacer.rend = sin!=null&&sin>=7?'Retoma con 2–3 rodajes suaves en Z2 esta semana antes de volver a meter series o tiradas largas.'
     : cambio!=null&&cambio>30?'Subiste mucho el volumen: no aumentes más de un 10 % por semana para evitar lesiones.'
-    : efU&&efP&&efU<efP*0.97?'Tu eficiencia bajó: más rodajes suaves en Z2 y revisa si estás descansando lo suficiente.'
-    : 'Vas bien: mantén la mayoría de los rodajes suaves (Z2) y una sesión de calidad por semana.';
+    : pcPlan!=null&&pcPlan<60?'Hiciste menos de 6 de cada 10 sesiones del plan: cuéntale a tu entrenador qué días no puedes, para que lo ajuste a tu semana.'
+    : PP4.length>=2&&enc4/PP4.length>=0.5?'En los rodajes vas por encima del pulso que pide tu entrenador: baja el ritmo hasta entrar en su rango.'
+    : efU&&efP&&efU<efP*0.97?'Tu eficiencia bajó: revisa si estás descansando lo suficiente.'
+    : 'Vas bien: sigue los rangos de pulso del plan y mantén la constancia.';
 
   /* Performance */
   const c=ult('carga_aguda'), est=(ult('estado')||{}).estado, p7=prom(U7,'prep');
@@ -501,11 +512,28 @@ function valorar(){
   else if(recMala&&cargaAlta){titular='Mucha carga y poca recuperación: toca bajar el ritmo.';st='serio';hacer.perf='Reduce la intensidad 3–4 días, duerme más y vuelve a subir cuando la VFC regrese a su rango.';}
   else if(recMala){titular='Tu recuperación está floja aunque no entrenas fuerte.';st='serio';hacer.perf='El cansancio viene de fuera del deporte: revisa sueño, estrés y alimentación antes de entrenar más.';}
   else {titular=cargaBaja?'Recuperación aceptable y carga baja: hay margen para entrenar más.':'Recuperación aceptable; vigila el descanso.';st='aviso';hacer.perf=cargaBaja?'Suma uno o dos entrenamientos suaves a la semana.':'Mantén la carga y cuida las horas de sueño.';}
+  if(EN){ // al entrenador no se le dice qué hacer: se le dan los hechos que importan para planificar
+    const av={desc:[],rend:[],perf:[]};
+    if(dR!=null&&dR>=4)av.desc.push(`Pulso en reposo ${signo(dR,0,' ppm')} sobre lo normal esta semana.`);
+    if(sH!=null&&sH<7)av.desc.push(`Duerme ${hm(sH)} de media en las últimas 4 semanas.`);
+    if(bal!=null&&bal<60)av.desc.push(`VFC fuera de rango el ${100-bal} % de los días.`);
+    if(bbW!=null&&bbW<55)av.desc.push(`Despierta con Body Battery ${n0(bbW)} de media.`);
+    if(sin!=null&&sin>=4)av.rend.push(`${sin} días sin correr.`);
+    if(cambio!=null&&Math.abs(cambio)>=25)av.rend.push(`Volumen de 4 semanas ${signo(cambio,0,' %')} frente a las 4 anteriores.`);
+    if(PP4.length&&enc4)av.rend.push(`Pulso medio por encima del rango pedido en ${enc4} de ${PP4.length} sesiones continuas.`);
+    if((D.plan||[]).length){const C=cruzarPlan().filter(c=>c.f>=sumarDias(ultimo,-27)&&c.f<ultimo),ok=C.filter(c=>c.est[1]==='bien').length;if(C.length&&ok/C.length<0.8)av.rend.push(`Cumplió ${ok} de ${C.length} sesiones del plan en 4 semanas.`);}
+    if(c&&c.acwr_estado&&c.acwr_estado!=='OPTIMAL')av.perf.push(`Carga de la semana ${(ACWR[c.acwr_estado]||[''])[0].toLowerCase()} del rango óptimo de Garmin (${n0(c.carga_aguda)}; óptimo ${n0(c.carga_min)}–${n0(c.carga_max)}).`);
+    if(pm){const z=zonaTSB(pm.tsb);if(z&&z[1]!=='bien')av.perf.push(`Balance ${signo(pm.tsb)}: ${z[0].toLowerCase()}.`);}
+    if(p7!=null&&p7<50)av.perf.push(`Preparación media de 7 días: ${n0(p7)}/100.`);
+    const L=D.laboral;if(L&&L.semanas){[[0,'Esta semana'],[7,'La próxima semana']].forEach(([o,t])=>{const w=L.semanas.find(x=>x.f===sumarDias(lunes(hoyLocal),o));if(w&&w.carga!=null&&w.carga>=100)av.perf.push(`${t}, carga laboral al ${n0(w.carga)} % de su capacidad${w.veredicto?` (${w.veredicto.toLowerCase()})`:''}.`);});}
+    const nada={desc:'Sin señales de fatiga en sueño, VFC ni pulso en reposo.',rend:'Volumen, constancia y cumplimiento sin alertas.',perf:'Carga y balance dentro de lo esperado.'};
+    ['desc','rend','perf'].forEach(k=>hacer[k]=av[k].length?av[k].join(' '):nada[k]);
+  }
   const estadoArea = a => pts[a]===0?'bien':pts[a]<=2?'aviso':'serio';
   const NOM={bien:'Bien',aviso:'Atención',serio:'Alerta'};
   const ICO={bien:'✓',aviso:'!',serio:'▲'};
   const area=(k,t)=>{const s=k==='perf'?PEOR(items.perf.map(i=>i[0])):estadoArea(k);
-    return `<div class="area" style="border-top-color:var(${ST[s].c})"><h4>${t}${chip(NOM[s],s)}</h4><ul>${items[k].map(([s,x])=>`<li data-t="${s}" data-i="${ICO[s]||'·'}">${x}</li>`).join('')}</ul><div class="hacer"><b>Qué hacer</b>${hacer[k]}</div></div>`;};
+    return `<div class="area" style="border-top-color:var(${ST[s].c})"><h4>${t}${chip(NOM[s],s)}</h4><ul>${items[k].map(([s,x])=>`<li data-t="${s}" data-i="${ICO[s]||'·'}">${x}</li>`).join('')}</ul><div class="hacer"><b>${EN?'Para tener en cuenta':'Qué hacer'}</b>${hacer[k]}</div></div>`;};
   document.getElementById('valoracion').innerHTML=`
     <div class="veredicto"><div class="sello" style="background:var(${ST[st].c})" aria-hidden="true">${ICO[st]}</div>
       <div><h2 class="titular">${titular}</h2><div class="bajada">Valoración de tus últimas 4 semanas comparadas con las 4 anteriores · ${NOM[st]}</div></div></div>
@@ -596,10 +624,13 @@ function rendimiento(panel){
         plugins:{tooltip:{callbacks:{title:i=>{const a=i[0].raw.a;return `${fLarga(a.f)} · ${a.nombre||''}`;},label:i=>{const a=i.raw.a;return ` ${a.km?.toFixed(1)} km a ${ritmo(a.ritmo)}/km`;},afterLabel:i=>{const a=i.raw.a;return ` Pulso medio ${a.fc} ppm${a.desnivel?` · desnivel ${a.desnivel} m`:''}`;}}}}}});
   } else vacio(panel,'Ritmo frente a pulso','No hay carreras en este periodo.');
 
-  const Z=['--q200','--q300','--q400','--q550','--q700'], ZN=['Z1 Muy suave','Z2 Fácil','Z3 Aeróbica','Z4 Umbral','Z5 Máximo'];
+  const Z=['--q200','--q300','--q400','--q550','--q700'], ZN=['Z1 Muy suave','Z2 Fácil','Z3 Aeróbica','Z4 Umbral','Z5 Máximo'].map((t,i)=>!ZF?t:`${t} (${i<4?`${ZF.pisos[i]}–${ZF.pisos[i+1]-1}`:`${ZF.pisos[4]}+`} ppm)`);
   const zt=[0,1,2,3,4].map(i=>S.reduce((s,[,w])=>s+w.z[i],0)), ztot=zt.reduce((a,b)=>a+b,0)||1, suave=Math.round((zt[0]+zt[1])/ztot*100);
-  nuevo(tarjeta(panel,{titulo:'Tiempo en zonas de pulso',k:'zonas',exp:'Minutos por semana en cada zona, sumando todas las actividades.',
-    lectura:`El ${suave} % de tu tiempo fue suave (Z1–Z2) y el ${Math.round((zt[3]+zt[4])/ztot*100)} % intenso (Z4–Z5). ${suave>=70?'Buen reparto para corredor de fondo.':'Para fondo, lo habitual es ~80 % suave: puedes ir más lento en los rodajes.'}`,
+  const PP=pulsoPlan().filter(c=>c.f>=desde()&&c.f<=ultimo), cuenta=k=>PP.filter(c=>c.pos===k).length;
+  const rangos=PP.reduce((m,c)=>{const k=c.lo+'–'+c.hi;m[k]=(m[k]||0)+1;return m;},{}), habitual=Object.entries(rangos).sort((a,b)=>b[1]-a[1])[0];
+  const equivale=habitual&&ZF?(()=>{const [lo,hi]=habitual[0].split('–').map(Number),a=zonaDe(lo),b=zonaDe(hi);return ` Su rango más usado (${habitual[0]} ppm) equivale a ${a===b?'Z'+a:`Z${a}–Z${b}`} de tu reloj.`;})():'';
+  nuevo(tarjeta(panel,{titulo:'Tiempo en zonas de pulso',k:'zonas',exp:`Minutos por semana en cada zona del reloj, sumando todas las actividades. ${suave} % del tiempo en Z1–Z2 y ${Math.round((zt[3]+zt[4])/ztot*100)} % en Z4–Z5.`,
+    lectura:`Tu entrenador marca su propio rango de pulso en cada sesión, y ese es el que cuenta.${equivale}${PP.length?` En ${PP.length} sesiones continuas del periodo, tu pulso medio quedó dentro de su rango en ${cuenta('dentro')}, por encima en ${cuenta('encima')} y por debajo en ${cuenta('debajo')}.`:''}`,
     leyenda:ZN.map((t,i)=>({t,c:css(Z[i])})),
     tabla:()=>({cols:['Semana del',...ZN.map(z=>z.slice(0,2))],filas:S.map(([k,w])=>[fCorta(k),...w.z.map(Math.round)])})}),{
     type:'bar',data:{labels:et,datasets:ZN.map((t,i)=>({label:t,data:S.map(([,w])=>Math.round(w.z[i])),backgroundColor:css(Z[i]),borderColor:css('--superficie'),borderWidth:{top:i?2:0},borderSkipped:false,maxBarThickness:24,borderRadius:i===4?{topLeft:4,topRight:4}:0}))},
@@ -820,6 +851,13 @@ function semanaPanel(panel){
 
 /* ---- Plan (TrainingPeaks) ---- */
 const grupoPlan = t => ({Carrera:'Carrera',Fuerza:'Fuerza',Caminata:'Caminata'})[t]||'Otros';
+/* Rango de pulso que pide el entrenador, solo en sesiones continuas (sin series) con un único rango de trabajo */
+const rangoPlan = p => {if(!p||!p.d||/×/.test(p.d))return null;const r=[...p.d.matchAll(/Trabajo[^\n]*? a (\d+)[–-](\d+) ppm/g)].map(m=>[+m[1],+m[2]]);
+  if(!r.length||r.some(x=>x[0]!==r[0][0]||x[1]!==r[0][1]))return null;return r[0];};
+const pulsoPlan = () => cruzarPlan().filter(c=>c.act&&c.act.fc&&rangoPlan(c)).map(c=>{const [lo,hi]=rangoPlan(c),fc=c.act.fc;return {...c,lo,hi,fc,pos:fc<lo?'debajo':fc>hi?'encima':'dentro'};});
+const POS={dentro:['Dentro','bien'],encima:['Encima','aviso'],debajo:['Debajo','neutro']};
+const ZF = D.zonas_fc&&D.zonas_fc.pisos?D.zonas_fc:null;
+const zonaDe = fc => ZF?Math.max(0,ZF.pisos.filter(x=>fc>=x).length):null;  // 1–5 (0 = bajo Z1)
 function cruzarPlan(){
   const P=(D.plan||[]).filter(p=>p.tipo!=='Descanso'), usados=new Set();
   // Primero el mismo día; si no, un día antes o después (sesión movida). Mismo deporte primero.
@@ -862,10 +900,12 @@ function planPanel(panel){
   // Sesión por sesión
   const t=document.createElement('article');t.className='tarjeta ancha';
   const lista=enRango.slice().reverse();
-  t.innerHTML=`<h3>Sesión por sesión${ayuda('sesiones')}</h3><p class="exp">${lista.length} sesiones programadas en el periodo, de la más reciente a la más antigua.</p><div class="tabla-scroll" style="max-height:460px">${tablaHTML({cols:['Fecha','Planificado','Plan','Realizado','Real','Estado'],
+  t.innerHTML=`<h3>Sesión por sesión${ayuda('sesiones')}</h3><p class="exp">${lista.length} sesiones programadas en el periodo, de la más reciente a la más antigua. Pulso${ayuda('pulso_plan')}: el rango que pidió tu entrenador frente a tu pulso medio.</p><div class="tabla-scroll" style="max-height:460px">${tablaHTML({cols:['Fecha','Planificado','Plan','Realizado','Real','Pulso (pedido → medio)','Estado'],
     filas:lista.map(c=>[fCorta(c.f),`<span style="display:block;text-align:left;max-width:240px;overflow:hidden;text-overflow:ellipsis">${(c.t||c.tipo).replace(/</g,'&lt;')}</span>`,[c.min?hm(c.min/60):'',c.km?n1(c.km)+' km':'',c.tss?c.tss+' TSS':''].filter(Boolean).join(' · '),
       c.act?`<span style="display:block;text-align:left;max-width:200px;overflow:hidden;text-overflow:ellipsis">${(c.act.nombre||TIPO[c.act.tipo]||'').replace(/</g,'&lt;')}</span>`:'—',
-      c.act?[hm(c.act.min/60),c.act.km?n1(c.act.km)+' km':'',tss(c.act)?tss(c.act)+' TSS':''].filter(Boolean).join(' · '):'',chip(c.est[0],c.est[1])])})}</div>`;
+      c.act?[hm(c.act.min/60),c.act.km?n1(c.act.km)+' km':'',tss(c.act)?tss(c.act)+' TSS':''].filter(Boolean).join(' · '):'',
+      (()=>{const r=rangoPlan(c),fc=c.act&&c.act.fc;if(!r)return fc?`— → ${fc}`:'';if(!fc)return `${r[0]}–${r[1]}`;const pos=fc<r[0]?'debajo':fc>r[1]?'encima':'dentro';return `${r[0]}–${r[1]} → ${fc} ${chip(POS[pos][0],POS[pos][1])}`;})(),
+      chip(c.est[0],c.est[1])])})}</div>`;
   panel.appendChild(t);
 }
 
@@ -910,6 +950,7 @@ function stravaPanel(panel){
 /* ---------- render ---------- */
 const paneles={semana:semanaPanel,rend:p=>{rendimiento(p);stravaPanel(p);},desc:descanso,perf:performance,plan:planPanel};
 const INTRO={rend:'Rendimiento: cuánto entrenas y cómo responde tu cuerpo al correr.',desc:'Descanso: cómo duermes y cuánto te recuperas día a día.',perf:'Performance: el equilibrio entre la carga que haces y lo preparado que estás para asumirla.',plan:'Plan: lo que tu entrenador programó en TrainingPeaks frente a lo que hiciste.',semana:'Semana: trabajo, entrenamiento y recuperación día a día, para planificar juntos.'};
+if(EN)Object.assign(INTRO,{semana:'Semana: trabajo, entrenamiento y recuperación de Diego día a día, para planificar.',rend:'Rendimiento: cuánto entrena Diego y cómo responde su cuerpo al correr.',desc:'Recuperación: cómo duerme Diego y cuánto se recupera día a día.',perf:'Carga y forma: el equilibrio entre la carga que hace y lo preparado que está para asumirla.',plan:'Plan: lo que el entrenador programó frente a lo que Diego hizo.'});
 function render(){
   ocultar();
   graficos.splice(0).forEach(c=>c.destroy());

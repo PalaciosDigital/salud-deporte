@@ -127,7 +127,7 @@ def resumir_predicciones(pred):
     return {k: pred.get(k) for k in ["time5K", "time10K", "timeHalfMarathon", "timeMarathon"]}
 
 
-EXTRAS = ("umbrales", "plan", "marcas", "segmentos", "laboral")  # datos opcionales que también lee la plantilla
+EXTRAS = ("umbrales", "plan", "marcas", "segmentos", "laboral", "zonas_fc")  # datos opcionales que también lee la plantilla
 
 
 def paquete(dias: dict, actividades: dict, predicciones, **extra) -> dict:
@@ -149,6 +149,18 @@ def resumir_umbrales(lt):
     return {"lthr": sh.get("heartRate"), "ftp": pw.get("functionalThresholdPower"),
             "ritmo_umbral": round(1000 / (vel * 10) / 60, 2) if vel else None,
             "fecha": (sh.get("calendarDate") or "")[:10]}
+
+
+def resumir_zonas_fc(z):
+    """Zonas de pulso configuradas en Garmin: piso de cada zona (ppm). Prefiere el perfil de carrera."""
+    lista = z if isinstance(z, list) else [z] if isinstance(z, dict) else []
+    lista = [e for e in lista if isinstance(e, dict) and all(e.get(f"zone{i}Floor") for i in range(1, 6))]
+    if not lista:
+        return None
+    e = next((e for e in lista if (e.get("sport") or "").upper() == "RUNNING"), None) \
+        or next((e for e in lista if (e.get("sport") or "").upper() == "DEFAULT"), lista[0])
+    return {"pisos": [e[f"zone{i}Floor"] for i in range(1, 6)], "max": e.get("maxHeartRateUsed"),
+            "metodo": e.get("trainingMethod"), "lthr": e.get("lactateThresholdHeartRateUsed")}
 
 
 def laboral_para_entrenador(lab):

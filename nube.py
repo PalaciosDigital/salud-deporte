@@ -18,7 +18,7 @@ from pathlib import Path
 
 warnings.filterwarnings("ignore")
 from cifrado import cifrar_objeto, descifrar_objeto, llave_desde_texto  # noqa: E402
-from generar_tablero import paquete, renderizar, resumir_actividad, resumir_dia, resumir_predicciones, resumir_umbrales, EXTRAS  # noqa: E402
+from generar_tablero import paquete, renderizar, resumir_actividad, resumir_dia, resumir_predicciones, resumir_umbrales, resumir_zonas_fc, EXTRAS  # noqa: E402
 
 DIAS_A_REFRESCAR = 4
 
@@ -75,6 +75,11 @@ def actualizar(entrada: Path, salida: Path):
         h["umbrales"] = resumir_umbrales(g.get_lactate_threshold(latest=True)) or h.get("umbrales")
     except Exception as e:
         print("Umbral de lactato no disponible:", e.__class__.__name__)
+    try:  # zonas de pulso del reloj (el registro de Actions es público: no imprimir valores)
+        h["zonas_fc"] = resumir_zonas_fc(g.get_heart_rate_zones()) or h.get("zonas_fc")
+        print("Zonas de pulso:", "ok" if h.get("zonas_fc") else "sin datos")
+    except Exception as e:
+        print("Zonas de pulso no disponibles:", e.__class__.__name__)
 
     # Fuentes extra: si fallan, el tablero se publica igual con lo de Garmin
     from fuentes import actualizar_laboral, actualizar_plan, actualizar_plan_garmin, actualizar_strava
