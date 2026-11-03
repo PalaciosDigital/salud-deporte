@@ -480,7 +480,18 @@ function valorar(){
     add('rend',pc>=80?'bien':pc>=60?'aviso':'serio',`Plan de tu entrenador${ayuda('plan')}: cumpliste <b>${ok} de ${C.length} sesiones</b> (${pc} %).`);pts.rend+=pc>=80?0:pc>=60?1:2;}}
   const PP4=pulsoPlan().filter(c=>c.f>=sumarDias(ultimo,-27)&&c.f<=ultimo), enc4=PP4.filter(c=>c.pos==='encima').length, den4=PP4.filter(c=>c.pos==='dentro').length;
   if(PP4.length){const pc=den4/PP4.length;add('rend',pc>=0.7?'bien':pc>=0.4?'aviso':'serio',`Pulso frente al plan${ayuda('pulso_plan')}: dentro del rango de tu entrenador en <b>${den4} de ${PP4.length} sesiones</b> continuas${enc4?` (${enc4} por encima)`:''}.`);pts.rend+=pc>=0.7?0:1;}
-  hacer.rend = sin!=null&&sin>=7?'Retoma con 2–3 rodajes suaves en Z2 esta semana antes de volver a meter series o tiradas largas.'
+  // Solo en la vista del atleta: ¿el plan de los próximos 7 días sube mucho el volumen frente a lo que vienes corriendo?
+  let salto=null;
+  if(!EN&&(D.plan||[]).length){
+    const prox=(D.plan||[]).filter(p=>p.tipo==='Carrera'&&p.f>ultimo&&p.f<=sumarDias(ultimo,7));
+    const ritmoMedio=prom(runsU,'ritmo')||6;  // min/km, para sesiones que vienen solo en minutos
+    const kmPlan=prox.reduce((s,p)=>s+(p.km||(p.min?p.min/ritmoMedio:0)),0), media=km/4;
+    if(prox.length&&kmPlan>0&&media>0){salto=Math.round((kmPlan-media)/media*100);
+      const t=salto<=10?'bien':salto<=30?'aviso':'serio';pts.rend+=t==='bien'?0:t==='aviso'?1:2;
+      add('rend',t,`Próximos 7 días: el plan suma <b>~${n0(kmPlan)} km</b> en ${prox.length} sesiones, frente a ${n0(media)} km por semana de media en las últimas 4 semanas (${signo(salto,0,' %')}).`);}
+  }
+  hacer.rend = salto!=null&&salto>30?`El plan de esta semana sube tu volumen un ${n0(salto)} % de golpe (lo prudente es hasta un 10 %). Cuéntaselo a tu entrenador y, mientras tanto, haz cada sesión en el límite bajo de su rango de pulso.`
+    : sin!=null&&sin>=7?'Retoma con 2–3 rodajes suaves en Z2 esta semana antes de volver a meter series o tiradas largas.'
     : cambio!=null&&cambio>30?'Subiste mucho el volumen: no aumentes más de un 10 % por semana para evitar lesiones.'
     : pcPlan!=null&&pcPlan<60?'Hiciste menos de 6 de cada 10 sesiones del plan: cuéntale a tu entrenador qué días no puedes, para que lo ajuste a tu semana.'
     : PP4.length>=2&&enc4/PP4.length>=0.5?'En los rodajes vas por encima del pulso que pide tu entrenador: baja el ritmo hasta entrar en su rango.'
