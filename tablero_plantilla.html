@@ -87,6 +87,16 @@ button:focus-visible{outline:2px solid var(--s1);outline-offset:2px}
 .area li b{color:var(--tinta);font-weight:600}
 .area .hacer{margin-top:auto;font-size:13.5px;background:var(--lavado);border-radius:8px;padding:9px 11px}
 .area .hacer b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--tinta2);margin-bottom:2px}
+.area .hacer .porque{display:block;margin-top:3px;color:var(--tenue);font-style:italic}
+.area .hacer .consejos{margin:0;padding-left:1.3em}
+.area .hacer .consejos li{display:list-item;list-style:decimal;padding-left:0;margin:0 0 9px;color:var(--tinta)}
+.area .hacer .consejos li::before{content:none}
+.area .hacer .consejos li:last-child{margin-bottom:0}
+.area .hacer .consejos li::marker{font-weight:700;color:var(--tinta2)}
+.area .hacer .consejos li[data-n="2"]::marker{color:var(--critico)}
+.area .hacer .mas{margin-top:9px}
+.area .hacer .mas summary{cursor:pointer;color:var(--tinta2);font-weight:600}
+.area .hacer .mas[open] summary{margin-bottom:8px}
 
 .pestanas{display:flex;gap:4px;border-bottom:1px solid var(--grilla);margin-bottom:8px;overflow-x:auto}
 .pestanas button{border:0;background:none;font:inherit;font-size:15px;color:var(--tinta2);padding:10px 14px;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;white-space:nowrap}
@@ -523,6 +533,45 @@ function valorar(){
   else if(recMala&&cargaAlta){titular='Mucha carga y poca recuperación: toca bajar el ritmo.';st='serio';hacer.perf='Reduce la intensidad 3–4 días, duerme más y vuelve a subir cuando la VFC regrese a su rango.';}
   else if(recMala){titular='Tu recuperación está floja aunque no entrenas fuerte.';st='serio';hacer.perf='El cansancio viene de fuera del deporte: revisa sueño, estrés y alimentación antes de entrenar más.';}
   else {titular=cargaBaja?'Recuperación aceptable y carga baja: hay margen para entrenar más.':'Recuperación aceptable; vigila el descanso.';st='aviso';hacer.perf=cargaBaja?'Suma uno o dos entrenamientos suaves a la semana.':'Mantén la carga y cuida las horas de sueño.';}
+  // Solo en la vista del atleta: todos los consejos que apliquen por área, ordenados por urgencia, cada uno con el dato que lo provoca
+  const CONS={desc:[],rend:[],perf:[]};
+  if(!EN){
+    const K=(a,n,txt,pq)=>CONS[a].push({n,txt,pq});
+    /* Descanso */
+    if(dR!=null&&dR>=4)K('desc',2,'Tu pulso en reposo está alto. Si además te notas cansado, haz 1–2 días suaves y vigila si te estás enfermando.',`esta semana va a ${n0(rhr7)} ppm, ${signo(dR,0,' ppm')} sobre tu normal (${n0(rhrB)} ppm).`);
+    else if(dR!=null&&dR>1.5)K('desc',1,'Vigila tu pulso en reposo los próximos días: si sigue subiendo, baja la intensidad.',`esta semana va a ${n0(rhr7)} ppm, ${signo(dR,0,' ppm')} sobre tu normal (${n0(rhrB)} ppm).`);
+    if(sH!=null&&sH<7)K('desc',sH<6.75?2:1,'Intenta acostarte 30 minutos antes: dormir más es lo que más mueve tu recuperación.',`duermes ${hm(sH)} de media en 4 semanas y solo el ${n7} % de las noches pasas de 7 h.`);
+    if(sS!=null&&sS<65)K('desc',sS<50?2:1,'Cuida la calidad del sueño: cuarto oscuro y fresco, y nada de pantallas la última media hora.',`tu puntaje de sueño medio es ${n0(sS)}/100 (bueno es de 80 para arriba).`);
+    if(bal!=null&&bal<60)K('desc',bal<50?2:1,'Tu VFC sale de rango a menudo: revisa estrés, alcohol y cenas tardías, y alterna días duros con suaves.',`estuvo en su rango normal solo el ${bal} % de los ${hv.length} días con dato.`);
+    if(bbW!=null&&bbW<55)K('desc',1,'Te levantas con poca energía: deja el ejercicio intenso para los días en que despiertes por encima de 60.',`esta semana despiertas con una Body Battery de ${n0(bbW)} de media.`);
+    /* Rendimiento */
+    if(salto!=null&&salto>30)K('rend',2,'Cuéntale a tu entrenador que el plan de esta semana sube tu volumen de golpe y, mientras tanto, haz cada sesión en el límite bajo de su rango de pulso.',`el plan suma un ${n0(salto)} % más de kilómetros que tu media de las últimas 4 semanas; lo prudente es hasta un 10 %.`);
+    else if(salto!=null&&salto>10)K('rend',1,'El plan sube algo el volumen esta semana: haz los rodajes en la parte baja del rango de pulso.',`el plan suma un ${n0(salto)} % más de kilómetros que tu media de las últimas 4 semanas.`);
+    if(sin!=null&&sin>=7)K('rend',2,'Retoma con 2–3 rodajes suaves en Z2 esta semana antes de volver a meter series o tiradas largas.',`llevas ${sin} días sin correr (la última fue el ${fCorta(ultRun.f)}).`);
+    if(cambio!=null&&cambio>30)K('rend',1,'Subiste mucho el volumen: no aumentes más de un 10 % por semana para evitar lesiones.',`corriste ${n0(km)} km en 4 semanas, un ${n0(cambio)} % más que en las 4 anteriores (${n0(kmP)} km).`);
+    else if(cambio!=null&&cambio<-15&&!(sin!=null&&sin>=7))K('rend',cambio<-40?2:1,'Bajaste el volumen: si no fue a propósito (descarga o lesión), recupera la rutina sumando rodajes suaves, no tiradas largas.',`corriste ${n0(km)} km en 4 semanas, un ${n0(-cambio)} % menos que en las 4 anteriores (${n0(kmP)} km).`);
+    if(pcPlan!=null&&pcPlan<60)K('rend',2,'Cuéntale a tu entrenador qué días no puedes entrenar, para que ajuste el plan a tu semana.',`hiciste el ${pcPlan} % de las sesiones del plan en las últimas 4 semanas.`);
+    else if(pcPlan!=null&&pcPlan<80)K('rend',1,'Intenta no saltarte sesiones del plan; si un día no puedes, muévela en lugar de perderla.',`hiciste el ${pcPlan} % de las sesiones del plan en las últimas 4 semanas (lo ideal es 80 % o más).`);
+    if(PP4.length>=2&&enc4/PP4.length>=0.5)K('rend',1,'En los rodajes vas por encima del pulso que pide tu entrenador: baja el ritmo hasta entrar en su rango.',`en ${enc4} de ${PP4.length} sesiones continuas tu pulso medio quedó por encima del rango pedido.`);
+    if(semanasConstantes<=2)K('rend',semanasConstantes<=1?2:1,'Busca correr al menos 2 veces cada semana: la constancia pesa más que una semana fuerte.',`solo ${semanasConstantes} de las últimas 4 semanas tuvieron 2 carreras o más.`);
+    if(efU&&efP&&efU<efP*0.97)K('rend',1,'Tu eficiencia bajó: revisa si estás descansando lo suficiente antes de subir la carga.',`avanzas ${n2(efU)} m por latido, frente a ${n2(efP)} en los 3 meses anteriores.`);
+    /* Performance: primero el consejo del veredicto (cruza recuperación y carga) */
+    const recTxt=recBuena?'buena':recMala?'floja':'aceptable';
+    const POS={LOW:'por debajo de',OPTIMAL:'dentro de',HIGH:'por encima de',VERY_HIGH:'muy por encima de'};
+    const cargaTxt=c?`tu carga de la semana (${n0(c.carga_aguda)}) está ${POS[c.acwr_estado]||'fuera de'} tu rango óptimo (${n0(c.carga_min)}–${n0(c.carga_max)})`:'no hay dato de carga de la semana';
+    K('perf',st==='serio'?2:st==='aviso'?1:0,hacer.perf,`tu recuperación está ${recTxt}${p7!=null?` (preparación media ${n0(p7)}/100)`:''} y ${cargaTxt}.`);
+    if(pm){const z=zonaTSB(pm.tsb);if(z&&z[1]==='serio')K('perf',2,z[2],`tu balance (forma ${n0(pm.ctl)} − fatiga ${n0(pm.atl)}) está en ${signo(pm.tsb)}.`);}
+    if(['UNPRODUCTIVE','OVERREACHING','STRAINED'].includes(est))K('perf',2,'Tu reloj dice que el entrenamiento no te está rindiendo: mete 2–3 días suaves y duerme más antes de otra sesión dura.',`tu estado de entrenamiento es «${ESTADO[est]}».`);
+    else if(est==='DETRAINING')K('perf',1,'Estás perdiendo forma: vuelve a una rutina regular, aunque sea suave.',`tu estado de entrenamiento es «${ESTADO[est]}».`);
+    if(p7!=null&&p7<45)K('perf',1,'Tu cuerpo no llega preparado a los entrenos: cambia las sesiones duras por suaves hasta que la preparación pase de 50.',`tu preparación media de los últimos 7 días es ${n0(p7)}/100.`);
+    if(b&&b.trainingBalanceFeedbackPhrase&&b.trainingBalanceFeedbackPhrase!=='BALANCED')K('perf',1,'Revisa en la tarjeta «Balance de carga» qué tipo de esfuerzo te falta o te sobra, y coméntalo con tu entrenador.','Garmin marca tu reparto entre rodajes suaves, ritmos medios e intensidad como desequilibrado.');
+    // Si un área no tiene nada que corregir, queda su consejo positivo con el porqué
+    if(!CONS.desc.length)K('desc',0,hacer.desc,'sueño, VFC, pulso en reposo y Body Battery están dentro de lo normal.');
+    if(!CONS.rend.length)K('rend',0,hacer.rend,'volumen, constancia y cumplimiento del plan van sin alertas.');
+    // un "sigue así" no convive con alertas; el orden es por urgencia (sort estable: a igual urgencia, el veredicto va primero)
+    if(CONS.perf.length>1&&CONS.perf[0].n===0)CONS.perf.shift();
+    ['desc','rend','perf'].forEach(k=>CONS[k].sort((x,y)=>y.n-x.n));
+  }
   if(EN){ // al entrenador no se le dice qué hacer: se le dan los hechos que importan para planificar
     const av={desc:[],rend:[],perf:[]};
     if(dR!=null&&dR>=4)av.desc.push(`Pulso en reposo ${signo(dR,0,' ppm')} sobre lo normal esta semana.`);
@@ -544,7 +593,10 @@ function valorar(){
   const NOM={bien:'Bien',aviso:'Atención',serio:'Alerta'};
   const ICO={bien:'✓',aviso:'!',serio:'▲'};
   const area=(k,t)=>{const s=k==='perf'?PEOR(items.perf.map(i=>i[0])):estadoArea(k);
-    return `<div class="area" style="border-top-color:var(${ST[s].c})"><h4>${t}${chip(NOM[s],s)}</h4><ul>${items[k].map(([s,x])=>`<li data-t="${s}" data-i="${ICO[s]||'·'}">${x}</li>`).join('')}</ul><div class="hacer"><b>${EN?'Para tener en cuenta':'Qué hacer'}</b>${hacer[k]}</div></div>`;};
+    return `<div class="area" style="border-top-color:var(${ST[s].c})"><h4>${t}${chip(NOM[s],s)}</h4><ul>${items[k].map(([s,x])=>`<li data-t="${s}" data-i="${ICO[s]||'·'}">${x}</li>`).join('')}</ul><div class="hacer"><b>${EN?'Para tener en cuenta':'Qué hacer'}</b>${EN?hacer[k]:consejos(k)}</div></div>`;};
+  const consejos=k=>CONS[k].length===1?`${CONS[k][0].txt}<span class="porque">Por qué: ${CONS[k][0].pq}</span>`
+    :(()=>{const li=x=>`<li data-n="${x.n}">${x.txt}<span class="porque">Por qué: ${x.pq}</span></li>`, A=CONS[k].slice(0,3), R=CONS[k].slice(3);
+      return `<ol class="consejos">${A.map(li).join('')}</ol>${R.length?`<details class="mas"><summary>Ver ${R.length} consejo${R.length>1?'s':''} más</summary><ol class="consejos" start="4">${R.map(li).join('')}</ol></details>`:''}`;})();
   document.getElementById('valoracion').innerHTML=`
     <div class="veredicto"><div class="sello" style="background:var(${ST[st].c})" aria-hidden="true">${ICO[st]}</div>
       <div><h2 class="titular">${titular}</h2><div class="bajada">Valoración de tus últimas 4 semanas comparadas con las 4 anteriores · ${NOM[st]}</div></div></div>
